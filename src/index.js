@@ -1,4 +1,6 @@
 require('dotenv').config();
+const dns = require('node:dns');
+dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord connection hangs
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
