@@ -10,6 +10,7 @@ const db = require('./db');
 
 // Config
 const CHANNEL_ID = process.env.CHANNEL_ID;
+const BASE_URL = process.env.BASE_URL || 'https://toothy-bot-production.up.railway.app';
 
 // Helper: Clean Token (Strict Whitelist)
 let TOKEN = process.env.DISCORD_TOKEN;
@@ -127,7 +128,7 @@ client.on('interactionCreate', async interaction => {
         if (!user) {
             return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
         }
-        await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: http://localhost:3000/index.html` });
+        await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: ${BASE_URL}/index.html` });
     }
 
     // --- USERS ---
@@ -147,7 +148,7 @@ client.on('interactionCreate', async interaction => {
         if (!user) {
             return await interaction.editReply({ content: `❌ That user has not set up a profile.` });
         }
-        await interaction.editReply({ content: `🔍 **${user.name}'s Inventory**: http://localhost:3000/index.html` });
+        await interaction.editReply({ content: `🔍 **${user.name}'s Inventory**: ${BASE_URL}/index.html` });
     }
 
     // --- XP ---
