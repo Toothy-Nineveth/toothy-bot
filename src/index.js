@@ -128,7 +128,7 @@ client.on('interactionCreate', async interaction => {
         if (!user) {
             return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
         }
-        await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: ${BASE_URL}/index.html` });
+        await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: ${BASE_URL}/index.html?userId=${interaction.user.id}` });
     }
 
     // --- USERS ---
@@ -148,7 +148,7 @@ client.on('interactionCreate', async interaction => {
         if (!user) {
             return await interaction.editReply({ content: `❌ That user has not set up a profile.` });
         }
-        await interaction.editReply({ content: `🔍 **${user.name}'s Inventory**: ${BASE_URL}/index.html` });
+        await interaction.editReply({ content: `🔍 **${user.name}'s Inventory**: ${BASE_URL}/index.html?userId=${targetUser.id}` });
     }
 
     // --- XP ---

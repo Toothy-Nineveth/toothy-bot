@@ -469,6 +469,20 @@
             showView('usersView');
         }
 
+        // Initialize: Check for userId in URL
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('userId');
+
+            if (userId) {
+                // Auto-load specific user's inventory
+                loadDashboard(userId);
+            } else {
+                // Show user selection screen
+                loadUsers();
+            }
+        });
+
         async function loadDashboard(userId) {
             const res = await fetch(`/api/inventory/${userId}`);
             const data = await res.json();
