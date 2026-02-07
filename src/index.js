@@ -260,6 +260,17 @@ async function init() {
         // 2. Start Server
         startServer();
 
+        // 2.5 Connectivity Check
+        try {
+            console.log("Testing connection to Discord API...");
+            const response = await fetch('https://discord.com/api/v10/gateway');
+            console.log(`Gateway API Status: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            console.log(`Gateway URL: ${data.url}`);
+        } catch (netErr) {
+            console.error("❌ COMBAT LOG: Connectivity Check Failed!", netErr);
+        }
+
         // 3. Login Discord Bot
         console.log("Logging into Discord...");
         await client.login(TOKEN);
