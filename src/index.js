@@ -40,6 +40,11 @@ const client = new Client({
 // START SERVER
 // START SERVER (Managed in init)
 
+client.on('debug', info => {
+    // Filter out heartbeat messages to keep logs clean
+    if (!info.includes('Heartbeat')) console.log(`[DEBUG] ${info}`);
+});
+
 // COMMANDS REGISTRATION
 const commands = [
     new SlashCommandBuilder()
