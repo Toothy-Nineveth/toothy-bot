@@ -271,11 +271,30 @@ async function init() {
             console.error("❌ COMBAT LOG: Connectivity Check Failed!", netErr);
         }
 
-        // 3. Login Discord Bot
-        console.log("Logging into Discord...");
-        await client.login(TOKEN);
+        // 3. Login with Retry Pattern
+        await loginWithRetry(TOKEN);
+
     } catch (error) {
         console.error("Critical Startup Error:", error);
+    }
+}
+
+async function loginWithRetry(token) {
+    let attempts = 0;
+    while (true) {
+        try {
+            console.log(`📡 Attempting Discord Login (Attempt ${attempts + 1})...`);
+            await client.login(token);
+            console.log("✅ Discord Login Successful!");
+            break; // Exit loop on success
+        } catch (error) {
+            attempts++;
+            console.error(`❌ Login Failed: ${error.message}`);
+
+            // Wait 60 seconds before retrying
+            console.log("⏳ Retrying in 60 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 60000));
+        }
     }
 }
 
