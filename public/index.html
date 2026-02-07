@@ -502,13 +502,19 @@
         // --- RENDERERS ---
         function renderPaperDoll() {
             const slots = currentUser.slots || {};
+            console.log('Rendering paper doll. Slots:', slots);
+            console.log('Current items:', currentItems.map(i => ({ id: i.id, filename: i.filename })));
+
             SLOTS.forEach(slot => {
                 const safeName = slot.replace(/\s/g, '');
                 const div = document.querySelector(`#slot-${safeName} .slot-content`);
                 const itemId = slots[slot];
 
                 if (itemId) {
+                    console.log(`Looking for item ${itemId} in slot ${slot}`);
                     const item = currentItems.find(i => i.id === itemId);
+                    console.log('Found item:', item);
+
                     if (item) {
                         div.innerHTML = `
                             <img src="${item.url}" class="slot-item-img" onclick="viewImage('${item.url}')" title="${item.filename}">
@@ -516,6 +522,7 @@
                         `;
                     } else {
                         // Item might have been deleted but still equipped
+                        console.warn(`Item ${itemId} not found in currentItems for slot ${slot}`);
                         div.innerHTML = '<span style="color:red; font-size:0.8em">Missing</span>';
                     }
                 } else {
