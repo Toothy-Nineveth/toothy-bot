@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Lightweight Health Check for UptimeRobot
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // API: Get Party Info (XP)
 app.get('/api/party', async (req, res) => {
     res.json(await db.getParty());
