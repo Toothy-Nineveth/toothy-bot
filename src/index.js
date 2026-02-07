@@ -284,7 +284,14 @@ async function loginWithRetry(token) {
     while (true) {
         try {
             console.log(`📡 Attempting Discord Login (Attempt ${attempts + 1})...`);
-            await client.login(token);
+
+            // Race login against 20s timeout to prevent hanging
+            const loginPromise = client.login(token);
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Login timeout after 20s")), 20000)
+            );
+
+            await Promise.race([loginPromise, timeoutPromise]);
             console.log("✅ Discord Login Successful!");
             break; // Exit loop on success
         } catch (error) {
