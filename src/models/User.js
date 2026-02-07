@@ -5,7 +5,7 @@ const UserSchema = new mongoose.Schema({
     name: String,
     gold: { type: Number, default: 0 },
     soulCoins: { type: Number, default: 0 },
-    slots: { type: Map, of: String } // Map of SlotName -> ItemID
+    slots: { type: mongoose.Schema.Types.Mixed, default: {} } // Plain object for SlotName -> ItemID
 });
 
 module.exports = mongoose.model('User', UserSchema);
