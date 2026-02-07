@@ -12,7 +12,7 @@ const CHANNEL_ID = process.env.CHANNEL_ID;
 // Helper: Clean Token (Remove spaces/quotes)
 let TOKEN = process.env.DISCORD_TOKEN;
 if (TOKEN) {
-    TOKEN = TOKEN.trim().replace(/^"|"$/g, '');
+    TOKEN = TOKEN.trim().replace(/^['"]+|['"]+$/g, '');
 }
 
 // Prevent crash on unhandled errors (like Mongoose timeouts)
@@ -236,6 +236,10 @@ async function init() {
         return;
     }
     console.log(`Token Loaded. Raw Length: ${process.env.DISCORD_TOKEN.length}, Cleaned Length: ${TOKEN.length}`);
+    if (TOKEN.length !== 70) {
+        console.warn(`⚠️ Potentially invalid token length! Expected 70, got ${TOKEN.length}.`);
+        console.warn(`First Char: ${TOKEN[0]}, Last Char: ${TOKEN[TOKEN.length - 1]}`);
+    }
     if (process.env.DISCORD_TOKEN.length !== TOKEN.length) {
         console.warn("⚠️ Note: Trimming extra spaces/quotes from token.");
     }
