@@ -34,7 +34,7 @@ const client = new Client({
 });
 
 // START SERVER
-startServer();
+// START SERVER (Managed in init)
 
 // COMMANDS REGISTRATION
 const commands = [
@@ -219,6 +219,15 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
 // STARTUP WRAPPER
 async function init() {
+    console.log("Starting Bot Initialization...");
+
+    // Check Token
+    if (!TOKEN) {
+        console.error("❌ CRITICAL ERROR: DISCORD_TOKEN is missing from Environment Variables!");
+        return;
+    }
+    console.log(`Token found (Length: ${TOKEN.length})`);
+
     try {
         // 1. Connect to DB
         await db.connect();
@@ -227,10 +236,12 @@ async function init() {
         startServer();
 
         // 3. Login Discord Bot
+        console.log("Logging into Discord...");
         await client.login(TOKEN);
     } catch (error) {
         console.error("Critical Startup Error:", error);
     }
 }
+
 
 init();
