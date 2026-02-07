@@ -587,21 +587,35 @@
         }
 
         async function confirmEquip() {
-            const itemId = document.getElementById('equipItemId').value;
-            const slot = document.getElementById('slotSelect').value;
+            try {
+                const itemId = document.getElementById('equipItemId').value;
+                const slot = document.getElementById('slotSelect').value;
 
-            if (!currentUser.slots) currentUser.slots = {};
-            currentUser.slots[slot] = itemId;
+                console.log('Equipping:', { itemId, slot, userId: currentUser.id });
 
-            // Save
-            await fetch(`/api/user/${currentUser.id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slots: currentUser.slots })
-            });
+                if (!currentUser.slots) currentUser.slots = {};
+                currentUser.slots[slot] = itemId;
 
-            closeEquipModal();
-            loadDashboard(currentUser.id); // Refresh
+                // Save
+                const response = await fetch(`/api/user/${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slots: currentUser.slots })
+                });
+
+                if (!response.ok) {
+                    console.error('Equipment save failed:', response.status, response.statusText);
+                    alert('Failed to save equipment. Check console for details.');
+                    return;
+                }
+
+                console.log('Equipment saved successfully');
+                closeEquipModal();
+                await loadDashboard(currentUser.id); // Refresh
+            } catch (error) {
+                console.error('Error in confirmEquip:', error);
+                alert('Error equipping item: ' + error.message);
+            }
         }
 
         async function unequip(slot) {
