@@ -86,6 +86,10 @@ const commands = [
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
 
+rest.on('rateLimited', (info) => {
+    console.warn(`[RATE LIMIT] Hit limit on ${info.route}. Retry in ${info.timeToReset}ms.`);
+});
+
 // SETUP ON READY
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -239,9 +243,9 @@ async function init() {
         return;
     }
     console.log(`Token Loaded. Raw Length: ${process.env.DISCORD_TOKEN.length}, Cleaned Length: ${TOKEN.length}`);
-    if (TOKEN.length !== 70) {
-        console.warn(`⚠️ Potentially invalid token length! Expected 70, got ${TOKEN.length}.`);
-        console.warn(`First Char: ${TOKEN[0]}, Last Char: ${TOKEN[TOKEN.length - 1]}`);
+    if (Math.abs(TOKEN.length - 70) > 5) {
+        // Only warn if drastically different (e.g. <65 or >75)
+        console.warn(`⚠️ Note: Token length is ${TOKEN.length}. This is usually fine if between 70-72.`);
     }
     if (process.env.DISCORD_TOKEN.length !== TOKEN.length) {
         console.warn("⚠️ Note: Trimming extra spaces/quotes from token.");
