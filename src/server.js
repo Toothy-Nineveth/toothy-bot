@@ -29,7 +29,13 @@ app.get('/api/inventory/:userId', async (req, res) => {
         return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user, items });
+    // Transform MongoDB _id to id for frontend
+    const transformedItems = items.map(item => ({
+        ...item.toObject(),
+        id: item._id.toString()
+    }));
+
+    res.json({ user, items: transformedItems });
 });
 
 // API: Update User Details (Gold, Slots)
