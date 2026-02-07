@@ -9,21 +9,20 @@ const db = require('./db');
 // Config
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
-// Helper: Clean Token (Remove spaces/quotes)
+// Helper: Clean Token (Strict Whitelist)
 let TOKEN = process.env.DISCORD_TOKEN;
 if (TOKEN) {
-    TOKEN = TOKEN.trim().replace(/^['"]+|['"]+$/g, '');
+    // Keep only alphanumeric, dots, underscores, dashes. Remove EVERYTHING else (spaces, quotes, invisible chars).
+    TOKEN = TOKEN.replace(/[^a-zA-Z0-9._-]/g, '');
 }
 
 // Prevent crash on unhandled errors (like Mongoose timeouts)
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
-    // Keep running
 });
 
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // Keep running
 });
 
 // Initialize Client
@@ -43,6 +42,10 @@ const client = new Client({
 client.on('debug', info => {
     // Filter out heartbeat messages to keep logs clean
     if (!info.includes('Heartbeat')) console.log(`[DEBUG] ${info}`);
+});
+
+client.on('error', error => {
+    console.error('[CLIENT ERROR]', error);
 });
 
 // COMMANDS REGISTRATION
