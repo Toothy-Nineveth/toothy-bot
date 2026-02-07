@@ -54,6 +54,9 @@ client.on('error', error => {
 // COMMANDS REGISTRATION
 const commands = [
     new SlashCommandBuilder()
+        .setName('help')
+        .setDescription('Show how to use Toothy Bot'),
+    new SlashCommandBuilder()
         .setName('setup_profile')
         .setDescription('Create or update your adventurer profile')
         .addStringOption(option =>
@@ -113,8 +116,41 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
+    // --- HELP ---
+    if (interaction.commandName === 'help') {
+        await interaction.deferReply({ ephemeral: true });
+        const helpMessage = `
+**🦷 Toothy Bot - How to Use**
+
+**Getting Started:**
+\`/setup_profile <name>\` - Create your character profile
+
+**Managing Inventory:**
+• React with ✅ to images posted in <#${CHANNEL_ID || 'the designated channel'}> to add items
+• \`/inventory\` - Get a link to your web inventory
+• Use the web interface to:
+  - Equip/unequip items to armor slots
+  - Update Gold and Soul Coins
+  - Add notes to items
+  - Delete items
+
+**Party Management:**
+\`/users\` - View all registered adventurers
+\`/xp check\` - View party XP
+\`/xp add <amount>\` - Add XP to the party
+\`/xp remove <amount>\` - Remove XP from the party
+
+**DM Tools:**
+\`/admin_view @user\` - View another player's inventory
+\`/bonus_action\` - Get a random bonus action suggestion
+
+**Need more help?** Contact your DM!
+        `;
+        await interaction.editReply({ content: helpMessage });
+    }
+
     // --- PROFILE ---
-    if (interaction.commandName === 'setup_profile') {
+    else if (interaction.commandName === 'setup_profile') {
         await interaction.deferReply({ ephemeral: true });
         const name = interaction.options.getString('name');
         await db.upsertUser(interaction.user.id, name);
