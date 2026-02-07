@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Bot Admin</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ff6b6b;
+        }
+
+        .user-card {
+            background: #1e1e1e;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .btn-view {
+            background: #4ecdc4;
+            color: #121212;
+        }
+
+        .btn-delete {
+            background: #ff4757;
+        }
+
+        a {
+            color: #4ecdc4;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🛡️ Admin Dashboard</h1>
+    <p><a href="/">← Back to Main Inventory</a></p>
+
+    <div id="userList">Loading...</div>
+
+    <script>
+        async function loadUsers() {
+            const res = await fetch('/api/users');
+            const users = await res.json();
+            const container = document.getElementById('userList');
+
+            if (users.length === 0) {
+                container.innerHTML = '<p>No users found.</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
+                <div class="user-card">
+                    <div class="user-info">
+                        ${u.name} <span style="font-size:0.8em; color:#888">(${u._id})</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-view" onclick="viewUser('${u._id}')">View Inventory</button>
+                        <button class="btn btn-delete" onclick="deleteUser('${u._id}', '${u.name}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewUser(id) {
+            // Technically index.html handles loading by ID if we modify it, 
+            // but for now let's just alert or maybe open index.html in a way that loads that user?
+            // The current index.html loads user list on start. 
+            // We can add a query param support to index.html later, but for now:
+            // The User requested "access to all characters".
+            // Since index.html ALREADY allows viewing any character (Admin View), valid.
+            alert("To view, go to the main page and click their name.");
+        }
+
+        async function deleteUser(id, name) {
+            if (!confirm(`Permanently delete ${name}?`)) return;
+            await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            loadUsers();
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

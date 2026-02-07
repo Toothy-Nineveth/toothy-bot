@@ -1,0 +1,59 @@
+{
+  "users": [
+    {
+      "id": "881755314767142933",
+      "name": "Tooths",
+      "gold": 0,
+      "soulCoins": 0,
+      "slots": {}
+    },
+    {
+      "id": "856329065757671435",
+      "name": "ඞ",
+      "gold": 0,
+      "soulCoins": 0,
+      "slots": {}
+    }
+  ],
+  "items": [
+    {
+      "id": "51bc2777-289d-4e01-9210-a3c05f55d16d",
+      "userId": "881755314767142933",
+      "filename": "Surprise_Teddy_Bear.png",
+      "url": "https://cdn.discordapp.com/attachments/1390916912355217500/1464603707734884385/Surprise_Teddy_Bear.png?ex=6987357e&is=6985e3fe&hm=6304167f8e8db1c108daccba95568861f8b0ee8a3d6efe656d276a4ea1f09699&",
+      "localPath": "images/Surprise_Teddy_Bear.png",
+      "sender": "_imperii",
+      "timestamp": "2026-02-06T14:41:57.376Z",
+      "content": "",
+      "quantity": 1,
+      "notes": ""
+    },
+    {
+      "id": "a946b438-1ec0-41b6-bac3-71723cd05812",
+      "userId": "856329065757671435",
+      "filename": "image.png",
+      "url": "https://cdn.discordapp.com/attachments/1390916912355217500/1458781212184412333/image.png?ex=69871edf&is=6985cd5f&hm=9caf75ffb5a5adace822d514f3ba4b4c3b49dd0d1179f2bf491205a990b8f001&",
+      "localPath": "images/image.png",
+      "sender": "_imperii",
+      "timestamp": "2026-02-06T14:28:23.685Z",
+      "content": "",
+      "quantity": 1,
+      "notes": ""
+    },
+    {
+      "id": "8ffaea0a-abb5-4d35-bf83-c913f40aa0c9",
+      "userId": "881755314767142933",
+      "filename": "Dart_2.png",
+      "url": "https://cdn.discordapp.com/attachments/1390916912355217500/1469314020480651489/Dart_2.png?ex=698734d1&is=6985e351&hm=7c15f3b103e6d30532a3d4d04523fc6486d5af8231f7b5f2b112731079711655&",
+      "localPath": "images/Dart_2.png",
+      "sender": "_imperii",
+      "timestamp": "2026-02-06T12:49:32.485Z",
+      "content": "",
+      "quantity": 67,
+      "notes": "I hate black people"
+    }
+  ],
+  "party": {
+    "xp": 23235
+  }
+}

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Inventory</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --slot-bg: #2a2a2a;
+            --text-color: #e0e0e0;
+            --accent-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --gold-color: #ffd700;
+            --soul-color: #a855f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* HEADER / XP */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #252525;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+
+        .xp-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .back-btn {
+            background: none;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: none;
+        }
+
+        /* VIEWS */
+        .view-section {
+            display: none;
+        }
+
+        .active-view {
+            display: block;
+        }
+
+        /* USERS LIST */
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .user-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #444;
+            transition: 0.2s;
+        }
+
+        .user-card:hover {
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        /* INVENTORY DASHBOARD LAYOUT */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* EQUIPMENT PANEL */
+        .equipment-panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .currencies {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .currency-input {
+            flex: 1;
+            padding: 8px;
+            background: #111;
+            border: 1px solid #444;
+            color: var(--gold-color);
+            font-weight: bold;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .soul-input {
+            color: var(--soul-color);
+            border-color: var(--soul-color);
+        }
+
+        .gold-label {
+            color: var(--gold-color);
+            font-size: 0.8em;
+            text-align: center;
+            display: block;
+        }
+
+        .paper-doll {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .slot-container {
+            background: var(--slot-bg);
+            border: 1px dashed #555;
+            border-radius: 6px;
+            min-height: 80px;
+            position: relative;
+            padding: 5px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .slot-container.highlight {
+            background: #3a3a3a;
+            border-color: var(--secondary-color);
+        }
+
+        .slot-label {
+            font-size: 0.7em;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            pointer-events: none;
+        }
+
+        .slot-item-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #555;
+        }
+
+        .unequip-btn {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #522;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        /* INVENTORY GRID */
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .item-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .item-card:hover {
+            transform: translateY(-2px);
+            border-color: #555;
+        }
+
+        .item-card.equipped {
+            opacity: 0.5;
+            border-color: var(--secondary-color);
+        }
+
+        .item-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .item-content {
+            padding: 10px;
+        }
+
+        .item-title {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: var(--accent-color);
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            gap: 5px;
+        }
+
+        .btn {
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            flex: 1;
+        }
+
+        .btn-edit {
+            background: #444;
+            color: white;
+        }
+
+        .btn-equip {
+            background: var(--secondary-color);
+            color: #121212;
+            font-weight: bold;
+        }
+
+        .btn-delete {
+            background: #fee;
+            color: #d33;
+            max-width: 30px;
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #252525;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #555;
+        }
+
+        select,
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        #modalImg {
+            max-width: 90%;
+            max-height: 90%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-bar">
+        <div>
+            <span class="xp-display" id="partyXpDisplay">Party XP: Loading...</span>
+        </div>
+        <div>
+            <h1 style="margin:0; font-size: 1.2em; display:inline;">🗡️ D&D Inventory</h1>
+            <button id="backBtn" class="back-btn" onclick="showUserList()">Users</button>
+        </div>
+    </div>
+
+    <!-- VIEW 1: USER LIST -->
+    <div id="usersView" class="view-section active-view">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <h2>Select Adventurer</h2>
+            <div id="userList" class="user-list"></div>
+        </div>
+    </div>
+
+    <!-- VIEW 2: DASHBOARD -->
+    <div id="dashboardView" class="view-section">
+        <h2 id="dashboardTitle" style="margin-top:0;">Inventory</h2>
+
+        <div class="dashboard">
+            <!-- LEFT: EQUIPMENT -->
+            <div class="equipment-panel">
+                <h3>Character Stats</h3>
+                <div class="currencies">
+                    <div>
+                        <label class="gold-label">Gold Pieces</label>
+                        <input type="number" id="goldInput" class="currency-input" placeholder="0"
+                            onchange="updateCurrency()">
+                    </div>
+                    <div>
+                        <label class="gold-label" style="color:var(--soul-color)">Soul Coins</label>
+                        <input type="number" id="soulInput" class="currency-input soul-input" placeholder="0"
+                            onchange="updateCurrency()">
+                    </div>
+                </div>
+
+                <h3>Equipment</h3>
+                <div class="paper-doll" id="paperDoll">
+                    <!-- Generated by JS -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-delete" style="width: 100%; max-width: 200px; padding: 10px;"
+                        onclick="deleteCharacter()">Delete Character</button>
+                </div>
+            </div>
+
+            <!-- RIGHT: INVENTORY -->
+            <div>
+                <input type="text" id="searchInput" placeholder="Search inventory..." style="margin-bottom:15px;"
+                    onkeyup="renderInventory()">
+                <div id="inventoryGrid" class="inventory-grid">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE MODAL -->
+    <div id="imageModal" class="modal" onclick="this.style.display='none'">
+        <img id="modalImg">
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Item</h3>
+            <label>Quantity</label>
+            <input type="number" id="editQty" min="1">
+            <label>Notes</label>
+            <textarea id="editNotes" rows="3"></textarea>
+            <button class="btn btn-equip" style="width:100%; padding:10px;" onclick="saveEdit()">Save</button>
+            <input type="hidden" id="editItemId">
+        </div>
+    </div>
+
+    <!-- EQUIP MODAL -->
+    <div id="equipModal" class="modal">
+        <div class="modal-content">
+            <h3>Equip Item</h3>
+            <p>Select a slot for this item:</p>
+            <select id="slotSelect">
+                <!-- Populated by JS -->
+            </select>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-equip" style="flex:1; padding:10px;" onclick="confirmEquip()">Equip</button>
+                <button class="btn btn-edit" style="flex:1; padding:10px;" onclick="closeEquipModal()">Cancel</button>
+            </div>
+            <input type="hidden" id="equipItemId">
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        const SLOTS = [
+            'Headwear', 'Cloak', 'Amulet', 'Inner Clothing',
+            'Armour', 'Handwear', 'Ring 1', 'Ring 2',
+            'Melee Weapon', 'Ranged Weapon', 'Shield', 'Footwear'
+        ];
+
+        // --- STATE ---
+        let currentUser = null;
+        let currentItems = [];
+        let partyXP = 0;
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPartyXP();
+            loadUsers();
+            initPaperDoll();
+        });
+
+        function initPaperDoll() {
+            const container = document.getElementById('paperDoll');
+            container.innerHTML = SLOTS.map(slot => `
+                <div class="slot-container" id="slot-${slot.replace(/\s/g, '')}">
+                    <div class="slot-label">${slot}</div>
+                    <div class="slot-content"></div>
+                </div>
+            `).join('');
+        }
+
+        // --- LOADERS ---
+        async function loadPartyXP() {
+            const res = await fetch('/api/party');
+            const data = await res.json();
+            document.getElementById('partyXpDisplay').innerText = `Party XP: ${data.xp}`;
+        }
+
+        async function loadUsers() {
+            const res = await fetch('/api/users');
+            const users = await res.json();
+            const list = document.getElementById('userList');
+            list.innerHTML = users.map(u => `
+                <div class="user-card" onclick="loadDashboard('${u.id}')">
+                    <div style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">${u.name}</div>
+                    <div style="color:#888; font-size:0.9em;">GP: ${u.gold || 0}</div>
+                </div>
+            `).join('');
+            showView('usersView');
+        }
+
+        async function loadDashboard(userId) {
+            const res = await fetch(`/api/inventory/${userId}`);
+            const data = await res.json();
+            currentUser = data.user;
+            currentItems = data.items;
+
+            // Header
+            document.getElementById('dashboardTitle').innerText = `${currentUser.name}'s Inventory`;
+            document.getElementById('goldInput').value = currentUser.gold || 0;
+            document.getElementById('soulInput').value = currentUser.soulCoins || 0;
+
+            renderPaperDoll();
+            renderInventory();
+            showView('dashboardView');
+        }
+
+        // --- RENDERERS ---
+        function renderPaperDoll() {
+            const slots = currentUser.slots || {};
+            SLOTS.forEach(slot => {
+                const safeName = slot.replace(/\s/g, '');
+                const div = document.querySelector(`#slot-${safeName} .slot-content`);
+                const itemId = slots[slot];
+
+                if (itemId) {
+                    const item = currentItems.find(i => i.id === itemId);
+                    if (item) {
+                        div.innerHTML = `
+                            <img src="${item.url}" class="slot-item-img" onclick="viewImage('${item.url}')" title="${item.filename}">
+                            <button class="unequip-btn" onclick="unequip('${slot}')">×</button>
+                        `;
+                    } else {
+                        // Item might have been deleted but still equipped
+                        div.innerHTML = '<span style="color:red; font-size:0.8em">Missing</span>';
+                    }
+                } else {
+                    div.innerHTML = '<span style="color:#444; font-size:1.5em">+</span>';
+                }
+            });
+        }
+
+        function renderInventory() {
+            const grid = document.getElementById('inventoryGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const equippedIds = Object.values(currentUser.slots || {});
+
+            const filtered = currentItems.filter(item => {
+                const text = (item.filename + ' ' + (item.notes || '')).toLowerCase();
+                return text.includes(search);
+            });
+
+            grid.innerHTML = filtered.map(item => {
+                const isEquipped = equippedIds.includes(item.id);
+                return `
+                <div class="item-card ${isEquipped ? 'equipped' : ''}">
+                    <img src="${item.url}" onclick="viewImage('${item.url}')">
+                    <div class="item-content">
+                        <div class="item-title" title="${item.filename}">${item.filename}</div>
+                        <div style="font-size:0.8em; color:#888; margin-bottom:5px;">Qty: ${item.quantity}</div>
+                        <div class="item-actions">
+                            <button class="btn btn-equip" onclick="openEquip('${item.id}')">${isEquipped ? 'Move' : 'Equip'}</button>
+                            <button class="btn btn-edit" onclick="openEdit('${item.id}')">Edit</button>
+                            <button class="btn btn-delete" onclick="deleteItem('${item.id}')">X</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // --- ACTIONS ---
+        async function updateCurrency() {
+            const gold = parseInt(document.getElementById('goldInput').value) || 0;
+            const soulCoins = parseInt(document.getElementById('soulInput').value) || 0;
+
+            currentUser.gold = gold;
+            currentUser.soulCoins = soulCoins;
+
+            await fetch(`/api/user/${currentUser.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gold, soulCoins })
+            });
+        }
+
+        function openEquip(itemId) {
+            const modal = document.getElementById('equipModal');
+            const select = document.getElementById('slotSelect');
+            document.getElementById('equipItemId').value = itemId;
+
+            // Populate options
+            select.innerHTML = SLOTS.map(slot => {
+                const current = currentUser.slots?.[slot];
+                const label = current ? `${slot} (Replace)` : slot;
+                return `<option value="${slot}">${label}</option>`;
+            }).join('');
+
+            modal.style.display = 'flex';
+        }
+
+        function closeEquipModal() {
+            document.getElementById('equipModal').style.display = 'none';
+        }
+
+        async function confirmEquip() {
+            const itemId = document.getElementById('equipItemId').value;
+            const slot = document.getElementById('slotSelect').value;
+
+            if (!currentUser.slots) currentUser.slots = {};
+            currentUser.slots[slot] = itemId;
+
+            // Save
+            await fetch(`/api/user/${currentUser.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slots: currentUser.slots })
+            });
+
+            closeEquipModal();
+            loadDashboard(currentUser.id); // Refresh
+        }
+
+        async function unequip(slot) {
+            if (currentUser.slots) {
+                delete currentUser.slots[slot];
+                await fetch(`/api/user/${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slots: currentUser.slots })
+                });
+                loadDashboard(currentUser.id);
+            }
+        }
+
+        function viewImage(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function openEdit(id) {
+            const item = currentItems.find(i => i.id === id);
+            document.getElementById('editItemId').value = id;
+            document.getElementById('editQty').value = item.quantity;
+            document.getElementById('editNotes').value = item.notes || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        async function saveEdit() {
+            const id = document.getElementById('editItemId').value;
+            const quantity = parseInt(document.getElementById('editQty').value);
+            const notes = document.getElementById('editNotes').value;
+
+            await fetch(`/api/items/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity, notes })
+            });
+
+            document.getElementById('editModal').style.display = 'none';
+            loadDashboard(currentUser.id);
+        }
+
+        async function deleteItem(id) {
+            if (!confirm('Delete this item?')) return;
+            await fetch(`/api/items/${id}`, { method: 'DELETE' });
+            loadDashboard(currentUser.id);
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            document.getElementById('backBtn').style.display = viewId === 'dashboardView' ? 'block' : 'none';
+        }
+
+        function showUserList() {
+            loadUsers();
+        }
+
+        async function deleteCharacter() {
+            if (!currentUser) return;
+            if (!confirm(`Are you sure you want to delete ${currentUser.name}? This cannot be undone.`)) return;
+
+            await fetch(`/api/users/${currentUser.id}`, { method: 'DELETE' });
+            alert('Character deleted.');
+            showUserList();
+        }
+    </script>
+</body>
+
+</html>

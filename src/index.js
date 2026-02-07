@@ -1,0 +1,236 @@
+require('dotenv').config();
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials } = require('discord.js');
+const { startServer } = require('./server');
+const db = require('./db');
+
+// Connect to DB
+// Database connection managed in init()
+
+// Config
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const CHANNEL_ID = process.env.CHANNEL_ID;
+
+// Prevent crash on unhandled errors (like Mongoose timeouts)
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    // Keep running
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Keep running
+});
+
+// Initialize Client
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMessageReactions
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+});
+
+// START SERVER
+startServer();
+
+// COMMANDS REGISTRATION
+const commands = [
+    new SlashCommandBuilder()
+        .setName('setup_profile')
+        .setDescription('Create or update your adventurer profile')
+        .addStringOption(option =>
+            option.setName('name').setDescription('Your character name').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('inventory')
+        .setDescription('Get a link to your inventory'),
+    new SlashCommandBuilder()
+        .setName('users')
+        .setDescription('List all registered adventurers'),
+    new SlashCommandBuilder()
+        .setName('admin_view')
+        .setDescription('View another user\'s inventory (Admin)')
+        .addUserOption(option =>
+            option.setName('user').setDescription('The user to view').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('xp')
+        .setDescription('Manage Party XP')
+        .addSubcommand(sub =>
+            sub.setName('check').setDescription('Check current Party XP'))
+        .addSubcommand(sub =>
+            sub.setName('add')
+                .setDescription('Add XP to the party')
+                .addIntegerOption(opt => opt.setName('amount').setDescription('Amount to add').setRequired(true)))
+        .addSubcommand(sub =>
+            sub.setName('remove')
+                .setDescription('Remove XP from the party')
+                .addIntegerOption(opt => opt.setName('amount').setDescription('Amount to remove').setRequired(true))),
+    new SlashCommandBuilder()
+        .setName('bonus_action')
+        .setDescription('Get a suggestion for your Bonus Action')
+].map(c => c.toJSON());
+
+const rest = new REST({ version: '10' }).setToken(TOKEN);
+
+// SETUP ON READY
+client.once('ready', async () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`Watching channel: ${CHANNEL_ID}`);
+
+    // Register Commands
+    try {
+        console.log('Started refreshing application (/) commands.');
+        // Use application commands (global)
+        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+        console.log('Successfully reloaded application (/) commands.');
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+// INTERACTION HANDLER
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    // --- PROFILE ---
+    if (interaction.commandName === 'setup_profile') {
+        await interaction.deferReply({ ephemeral: true });
+        const name = interaction.options.getString('name');
+        await db.upsertUser(interaction.user.id, name);
+        await interaction.editReply({ content: `✅ Profile updated! You are now known as **${name}**.` });
+    }
+
+    // --- INVENTORY ---
+    else if (interaction.commandName === 'inventory') {
+        await interaction.deferReply({ ephemeral: true });
+        const user = await db.getUser(interaction.user.id);
+        if (!user) {
+            return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
+        }
+        await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: http://localhost:3000/index.html` });
+    }
+
+    // --- USERS ---
+    else if (interaction.commandName === 'users') {
+        await interaction.deferReply({ ephemeral: true });
+        const users = await db.listUsers();
+        if (users.length === 0) return await interaction.editReply('No users registered yet.');
+        const list = users.map(u => `• **${u.name}** (<@${u.id}>)`).join('\n');
+        await interaction.editReply({ content: `**Registered Adventurers:**\n${list}` });
+    }
+
+    // --- ADMIN VIEW ---
+    else if (interaction.commandName === 'admin_view') {
+        await interaction.deferReply({ ephemeral: true });
+        const targetUser = interaction.options.getUser('user');
+        const user = await db.getUser(targetUser.id);
+        if (!user) {
+            return await interaction.editReply({ content: `❌ That user has not set up a profile.` });
+        }
+        await interaction.editReply({ content: `🔍 **${user.name}'s Inventory**: http://localhost:3000/index.html` });
+    }
+
+    // --- XP ---
+    else if (interaction.commandName === 'xp') {
+        await interaction.deferReply();
+        const sub = interaction.options.getSubcommand();
+
+        if (sub === 'check') {
+            const party = await db.getParty();
+            await interaction.editReply(`🌟 **Party XP**: ${party.xp}`);
+        }
+        else if (sub === 'add') {
+            const amount = interaction.options.getInteger('amount');
+            const newParty = await db.updatePartyXP(amount);
+            await interaction.editReply(`📈 Added **${amount} XP**! Total Party XP: **${newParty.xp}**`);
+        }
+        else if (sub === 'remove') {
+            const amount = interaction.options.getInteger('amount');
+            const newParty = await db.updatePartyXP(-amount);
+            await interaction.editReply(`📉 Removed **${amount} XP**. Total Party XP: **${newParty.xp}**`);
+        }
+    }
+
+    // --- BONUS ACTION ---
+    else if (interaction.commandName === 'bonus_action') {
+        const actions = [
+            "**Drink a Potion**: Consume a healing potion or elixir yourself.",
+            "**Shove**: Try to push a creature away or off a ledge. Make an Athletics check.\n> DC = 10 + target’s higher mod (Athletics/Acrobatics).\n> Success: Push 5 ft + 5 ft for every 2 points over DC.",
+            "**Throw**: Throw an item upwards to 15 ft + 5 for every STR modifier.",
+            "**Jump**: Move a distance based on your Strength.\n> Base range 15 ft + 5 ft for every 2 points of STR above 10.",
+            "**Dip**: Coat your weapon in a nearby surface (fire, poison, etc.) for extra damage.\n> Typically +1d6 unless otherwise stated.",
+            "**Off-hand Attack**: Make a secondary attack if you are dual-wielding.\n> Only deals base die unless you have the Dual Wielder feat."
+        ];
+        const randomAction = actions[Math.floor(Math.random() * actions.length)];
+        await interaction.reply(`🎲 **Random Bonus Action suggestion:**\n${randomAction}`);
+    }
+});
+
+// REACTION HANDLER (ADD ITEM)
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+
+    // Fetch if partial
+    if (reaction.partial) {
+        try {
+            await reaction.fetch();
+        } catch (error) {
+            console.error('Something went wrong when fetching the message:', error);
+            return;
+        }
+    }
+
+    // Check Channel & Emoji
+    if (reaction.message.channelId !== CHANNEL_ID) return;
+    if (reaction.emoji.name !== '✅') return;
+
+    // Check User Profile
+    const reactorProfile = await db.getUser(user.id);
+    if (!reactorProfile) {
+        console.log(`User ${user.tag} tried to add item but has no profile.`);
+        return;
+    }
+
+    const message = reaction.message;
+    if (message.attachments.size > 0) {
+        for (const [key, attachment] of message.attachments) {
+            if (!attachment.contentType?.startsWith('image/')) continue;
+
+            console.log(`User ${reactorProfile.name} claiming ${attachment.name}...`);
+
+            try {
+                // Add to DB (Stateless: Use URL directly)
+                await db.addItem(user.id, {
+                    filename: attachment.name,
+                    url: attachment.url,
+                    // localPath: localPath, // Deprecated
+                    sender: message.author.username,
+                    content: message.content
+                });
+                await message.react('✅');
+            } catch (e) {
+                console.error("Failed to add item:", e);
+            }
+        }
+    }
+});
+
+// STARTUP WRAPPER
+async function init() {
+    try {
+        // 1. Connect to DB
+        await db.connect();
+
+        // 2. Start Server
+        startServer();
+
+        // 3. Login Discord Bot
+        await client.login(TOKEN);
+    } catch (error) {
+        console.error("Critical Startup Error:", error);
+    }
+}
+
+init();
