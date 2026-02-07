@@ -7,9 +7,13 @@ const db = require('./db');
 // Database connection managed in init()
 
 // Config
-const TOKEN = process.env.DISCORD_TOKEN;
-const CLIENT_ID = process.env.CLIENT_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
+
+// Helper: Clean Token (Remove spaces/quotes)
+let TOKEN = process.env.DISCORD_TOKEN;
+if (TOKEN) {
+    TOKEN = TOKEN.trim().replace(/^"|"$/g, '');
+}
 
 // Prevent crash on unhandled errors (like Mongoose timeouts)
 process.on('uncaughtException', (err) => {
@@ -226,7 +230,10 @@ async function init() {
         console.error("❌ CRITICAL ERROR: DISCORD_TOKEN is missing from Environment Variables!");
         return;
     }
-    console.log(`Token found (Length: ${TOKEN.length})`);
+    console.log(`Token Loaded. Raw Length: ${process.env.DISCORD_TOKEN.length}, Cleaned Length: ${TOKEN.length}`);
+    if (process.env.DISCORD_TOKEN.length !== TOKEN.length) {
+        console.warn("⚠️ Note: Trimming extra spaces/quotes from token.");
+    }
 
     try {
         // 1. Connect to DB
