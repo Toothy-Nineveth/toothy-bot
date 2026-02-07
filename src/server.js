@@ -35,7 +35,13 @@ app.get('/api/inventory/:userId', async (req, res) => {
         id: item._id.toString()
     }));
 
-    res.json({ user, items: transformedItems });
+    // Also transform user _id to id
+    const transformedUser = {
+        ...user.toObject(),
+        id: user._id.toString()
+    };
+
+    res.json({ user: transformedUser, items: transformedItems });
 });
 
 // API: Update User Details (Gold, Slots)
