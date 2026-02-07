@@ -9,7 +9,7 @@ const db = require('./db');
 // Database connection managed in init()
 
 // Config
-const CHANNEL_ID = process.env.CHANNEL_ID;
+const CHANNEL_IDS = process.env.CHANNEL_ID ? process.env.CHANNEL_ID.split(',').map(id => id.trim()) : [];
 const BASE_URL = process.env.BASE_URL || 'https://toothy-bot-production.up.railway.app';
 
 // Helper: Clean Token (Strict Whitelist)
@@ -238,7 +238,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 
     // Check Channel & Emoji
-    if (reaction.message.channelId !== CHANNEL_ID) return;
+    if (!CHANNEL_IDS.includes(reaction.message.channelId)) return;
     if (reaction.emoji.name !== '✅') return;
 
     // Check User Profile
