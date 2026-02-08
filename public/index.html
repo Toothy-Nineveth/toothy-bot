@@ -376,6 +376,18 @@
 
             <!-- RIGHT: INVENTORY -->
             <div>
+                <!-- Category Tabs -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="itemsTab" class="btn btn-equip" onclick="switchCategory('items')"
+                        style="flex: 1; padding: 10px;">
+                        Items
+                    </button>
+                    <button id="skillsTab" class="btn btn-edit" onclick="switchCategory('skills')"
+                        style="flex: 1; padding: 10px;">
+                        Skills
+                    </button>
+                </div>
+
                 <input type="text" id="searchInput" placeholder="Search inventory..." style="margin-bottom:15px;"
                     onkeyup="renderInventory()">
                 <div id="inventoryGrid" class="inventory-grid">
@@ -430,6 +442,7 @@
         // --- STATE ---
         let currentUser = null;
         let currentItems = [];
+        let currentCategory = 'items'; // Current category tab: 'items' or 'skills'
         let partyXP = 0;
 
         // --- INIT ---
@@ -537,6 +550,11 @@
             const equippedIds = Object.values(currentUser.slots || {});
 
             const filtered = currentItems.filter(item => {
+                // Filter by category
+                const itemCategory = item.category || 'items';
+                if (itemCategory !== currentCategory) return false;
+
+                // Filter by search
                 const text = (item.filename + ' ' + (item.notes || '')).toLowerCase();
                 return text.includes(search);
             });
@@ -675,6 +693,17 @@
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active-view'));
             document.getElementById(viewId).classList.add('active-view');
             document.getElementById('backBtn').style.display = viewId === 'dashboardView' ? 'block' : 'none';
+        }
+
+        function switchCategory(category) {
+            currentCategory = category;
+
+            // Update tab button styles
+            document.getElementById('itemsTab').className = category === 'items' ? 'btn btn-equip' : 'btn btn-edit';
+            document.getElementById('skillsTab').className = category === 'skills' ? 'btn btn-equip' : 'btn btn-edit';
+
+            // Re-render inventory with new filter
+            renderInventory();
         }
 
         function showUserList() {

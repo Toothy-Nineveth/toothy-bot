@@ -12,6 +12,13 @@ const db = require('./db');
 const CHANNEL_IDS = process.env.CHANNEL_ID ? process.env.CHANNEL_ID.split(',').map(id => id.trim()) : [];
 const BASE_URL = process.env.BASE_URL || 'https://toothy-bot-production.up.railway.app';
 
+// Channel-to-Category mapping
+const CHANNEL_CATEGORY_MAP = {
+    '1390916912355217500': 'items',
+    '1227605665300611092': 'items',
+    '1401886530292940840': 'skills'
+};
+
 // Helper: Clean Token (Strict Whitelist)
 let TOKEN = process.env.DISCORD_TOKEN;
 if (TOKEN) {
@@ -305,12 +312,16 @@ client.on('messageReactionAdd', async (reaction, user) => {
             console.log(`User ${reactorProfile.name} claiming ${attachment.name}...`);
 
             try {
+                // Determine category based on channel
+                const category = CHANNEL_CATEGORY_MAP[message.channelId] || 'items';
+
                 // Add to DB (Stateless: Use URL directly)
                 await db.addItem(user.id, {
                     filename: attachment.name,
                     url: attachment.url,
                     messageId: message.id,
                     channelId: message.channelId,
+                    category: category,
                     sender: message.author.username,
                     content: message.content
                 });

@@ -6,6 +6,7 @@ const ItemSchema = new mongoose.Schema({
     url: String, // Discord CDN URL
     messageId: String, // Original message ID for URL refresh
     channelId: String, // Original channel ID
+    category: { type: String, default: 'items', enum: ['items', 'skills'] }, // Category based on channel
     localPath: String, // Deprecated, kept for migration
     content: String,
     sender: String,
