@@ -87,7 +87,10 @@ const commands = [
                 .addIntegerOption(opt => opt.setName('amount').setDescription('Amount to remove').setRequired(true))),
     new SlashCommandBuilder()
         .setName('bonus_action')
-        .setDescription('Get a suggestion for your Bonus Action')
+        .setDescription('Get a suggestion for your Bonus Action'),
+    new SlashCommandBuilder()
+        .setName('refresh_items')
+        .setDescription('Refresh all broken Discord image URLs from original messages')
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -221,6 +224,52 @@ client.on('interactionCreate', async interaction => {
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
         await interaction.reply(`🎲 **Random Bonus Action suggestion:**\n${randomAction}`);
     }
+
+    // --- REFRESH ITEMS ---
+    else if (interaction.commandName === 'refresh_items') {
+        await interaction.deferReply({ ephemeral: true });
+
+        const user = await db.getUser(interaction.user.id);
+        if (!user) {
+            return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
+        }
+
+        const items = await db.getInventory(interaction.user.id);
+        let updated = 0;
+        let failed = 0;
+        let skipped = 0;
+
+        await interaction.editReply({ content: `🔄 Refreshing ${items.length} items... Please wait.` });
+
+        for (const item of items) {
+            if (!item.messageId || !item.channelId) {
+                skipped++;
+                continue;
+            }
+
+            try {
+                const channel = await client.channels.fetch(item.channelId);
+                const message = await channel.messages.fetch(item.messageId);
+
+                const attachment = Array.from(message.attachments.values())
+                    .find(att => att.name === item.filename);
+
+                if (attachment && attachment.url !== item.url) {
+                    await db.updateItem(item._id, { url: attachment.url });
+                    updated++;
+                } else if (!attachment) {
+                    failed++;
+                }
+            } catch (error) {
+                console.error(`Failed to refresh item ${item.filename}:`, error);
+                failed++;
+            }
+        }
+
+        await interaction.editReply({
+            content: `✅ **Refresh Complete!**\n📊 Updated: ${updated} | ⏭️ Skipped: ${skipped} | ❌ Failed: ${failed}`
+        });
+    }
 });
 
 // REACTION HANDLER (ADD ITEM)
@@ -260,7 +309,8 @@ client.on('messageReactionAdd', async (reaction, user) => {
                 await db.addItem(user.id, {
                     filename: attachment.name,
                     url: attachment.url,
-                    // localPath: localPath, // Deprecated
+                    messageId: message.id,
+                    channelId: message.channelId,
                     sender: message.author.username,
                     content: message.content
                 });
