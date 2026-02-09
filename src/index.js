@@ -136,7 +136,7 @@ client.on('interactionCreate', async interaction => {
 \`/setup_profile <name>\` - Create your character profile
 
 **Managing Inventory:**
-• React with ✅ to images posted in <#${CHANNEL_ID || 'the designated channel'}> to add items
+• React with ✅ to images posted in designated channels to add items
 • \`/inventory\` - Get a link to your web inventory
 • Use the web interface to:
   - Equip/unequip items to armor slots
@@ -153,6 +153,7 @@ client.on('interactionCreate', async interaction => {
 **DM Tools:**
 \`/admin_view @user\` - View another player's inventory
 \`/bonus_action\` - Get a random bonus action suggestion
+\`/refresh_items\` - Fix broken Discord image URLs
 
 **Need more help?** Contact your DM!
         `;
