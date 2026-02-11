@@ -1,7 +1,7 @@
 require('dotenv').config();
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord connection hangs
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
 
@@ -73,10 +73,12 @@ const commands = [
         .setDescription('Get a link to your inventory'),
     new SlashCommandBuilder()
         .setName('users')
-        .setDescription('List all registered adventurers'),
+        .setDescription('List all registered adventurers')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
     new SlashCommandBuilder()
         .setName('admin_view')
         .setDescription('View another user\'s inventory (Admin)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addUserOption(option =>
             option.setName('user').setDescription('The user to view').setRequired(true)),
     new SlashCommandBuilder()
@@ -109,16 +111,17 @@ rest.on('rateLimited', (info) => {
 // SETUP ON READY
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    console.log(`Watching channel: ${CHANNEL_ID}`);
+    console.log(`Watching channels: ${CHANNEL_IDS.join(', ')}`);
 
     // Register Commands
     try {
-        console.log('Started refreshing application (/) commands.');
+        console.log(`Started refreshing ${commands.length} application (/) commands.`);
         // Use application commands (global)
-        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('Successfully reloaded application (/) commands.');
+        const data = await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        data.forEach(cmd => console.log(`  - /${cmd.name}`));
     } catch (error) {
-        console.error(error);
+        console.error('Failed to register commands:', error);
     }
 });
 
