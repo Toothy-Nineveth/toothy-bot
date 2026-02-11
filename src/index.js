@@ -4,6 +4,7 @@ dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord 
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
+const { scheduleHoroscope } = require('./horoscope');
 
 // Connect to DB
 // Database connection managed in init()
@@ -123,6 +124,9 @@ client.once('ready', async () => {
     } catch (error) {
         console.error('Failed to register commands:', error);
     }
+
+    // Start daily horoscope scheduler
+    scheduleHoroscope(client);
 });
 
 // INTERACTION HANDLER
