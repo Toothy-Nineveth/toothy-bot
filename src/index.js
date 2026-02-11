@@ -4,7 +4,7 @@ dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord 
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
-const { scheduleHoroscope } = require('./horoscope');
+const { scheduleHoroscope, sendSecretHoroscope } = require('./horoscope');
 
 // Connect to DB
 // Database connection managed in init()
@@ -127,6 +127,14 @@ client.once('ready', async () => {
 
     // Start daily horoscope scheduler
     scheduleHoroscope(client);
+
+    // Test endpoint: trigger horoscope manually
+    const express = require('express');
+    const testApp = client; // store reference for the test route below
+    // We need to get the existing express app from server.js
+    // Instead, let's just trigger immediately for this deploy
+    console.log('[HOROSCOPE] Triggering test "I know your secret" horoscope NOW...');
+    await sendSecretHoroscope(client);
 });
 
 // INTERACTION HANDLER

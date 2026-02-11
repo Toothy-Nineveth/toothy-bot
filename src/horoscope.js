@@ -153,4 +153,31 @@ function scheduleHoroscope(client) {
     console.log('[HOROSCOPE] Daily horoscope scheduler started (5:30 AM UTC+8)');
 }
 
-module.exports = { scheduleHoroscope, sendHoroscope };
+/**
+ * Send the "I know your secret" horoscope specifically (for testing)
+ */
+async function sendSecretHoroscope(client) {
+    try {
+        const channel = await client.channels.fetch(HOROSCOPE_CHANNEL_ID);
+        if (!channel) {
+            console.error('[HOROSCOPE] Channel not found:', HOROSCOPE_CHANNEL_ID);
+            return;
+        }
+
+        const guild = channel.guild;
+        const randomMember = await getRandomPlayerMember(guild);
+        let message;
+        if (randomMember) {
+            message = `I know your secret ${randomMember}`;
+        } else {
+            message = "I know your secret... but who?";
+        }
+
+        await channel.send(`🔮 **Today's horoscope:**\n${message}`);
+        console.log(`[HOROSCOPE] Sent secret horoscope: "${message}"`);
+    } catch (error) {
+        console.error('[HOROSCOPE] Failed to send secret horoscope:', error);
+    }
+}
+
+module.exports = { scheduleHoroscope, sendHoroscope, sendSecretHoroscope };
