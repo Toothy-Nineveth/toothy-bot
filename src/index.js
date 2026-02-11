@@ -4,7 +4,7 @@ dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord 
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
-const { scheduleHoroscope, sendSecretHoroscope } = require('./horoscope');
+const { scheduleHoroscope, sendHoroscope } = require('./horoscope');
 
 // Connect to DB
 // Database connection managed in init()
@@ -100,7 +100,11 @@ const commands = [
         .setDescription('Get a suggestion for your Bonus Action'),
     new SlashCommandBuilder()
         .setName('refresh_items')
-        .setDescription('Refresh all broken Discord image URLs from original messages')
+        .setDescription('Refresh all broken Discord image URLs from original messages'),
+    new SlashCommandBuilder()
+        .setName('horoscope')
+        .setDescription('Trigger the daily horoscope now (Admin)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -127,14 +131,6 @@ client.once('ready', async () => {
 
     // Start daily horoscope scheduler
     scheduleHoroscope(client);
-
-    // Test endpoint: trigger horoscope manually
-    const express = require('express');
-    const testApp = client; // store reference for the test route below
-    // We need to get the existing express app from server.js
-    // Instead, let's just trigger immediately for this deploy
-    console.log('[HOROSCOPE] Triggering test "I know your secret" horoscope NOW...');
-    await sendSecretHoroscope(client);
 });
 
 // INTERACTION HANDLER
@@ -246,6 +242,13 @@ client.on('interactionCreate', async interaction => {
         ];
         const randomAction = actions[Math.floor(Math.random() * actions.length)];
         await interaction.reply(`🎲 **Random Bonus Action suggestion:**\n${randomAction}`);
+    }
+
+    // --- HOROSCOPE (ADMIN) ---
+    else if (interaction.commandName === 'horoscope') {
+        await interaction.deferReply({ ephemeral: true });
+        await sendHoroscope(client);
+        await interaction.editReply({ content: '🔮 Horoscope sent!' });
     }
 
     // --- REFRESH ITEMS ---
