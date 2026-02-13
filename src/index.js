@@ -265,13 +265,30 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ content: '📦 You have no items to refresh.' });
         }
 
-        // Build a map of filename -> item(s) for quick lookup
-        const itemsByFilename = {};
+        // Extract the unique attachment ID from a Discord CDN URL
+        // URL format: https://cdn.discordapp.com/attachments/{channelId}/{attachmentId}/{filename}?...
+        function getAttachmentId(url) {
+            try {
+                const path = new URL(url).pathname; // /attachments/123/456/image.png
+                const parts = path.split('/');
+                // parts = ['', 'attachments', channelId, attachmentId, filename]
+                if (parts.length >= 5 && parts[1] === 'attachments') {
+                    return parts[3]; // the attachment ID
+                }
+            } catch (e) { }
+            return null;
+        }
+
+        // Build a map of attachmentId -> item for quick lookup
+        const itemsByAttachmentId = {};
+        let unmatchable = 0;
         for (const item of items) {
-            if (!itemsByFilename[item.filename]) {
-                itemsByFilename[item.filename] = [];
+            const attId = getAttachmentId(item.url);
+            if (attId) {
+                itemsByAttachmentId[attId] = item;
+            } else {
+                unmatchable++;
             }
-            itemsByFilename[item.filename].push(item);
         }
 
         let updated = 0;
@@ -286,7 +303,6 @@ client.on('interactionCreate', async interaction => {
                 const channel = await client.channels.fetch(channelId);
                 if (!channel) continue;
 
-                // Fetch last 200 messages from the channel
                 let lastId = null;
                 let fetchedAll = false;
                 let batchCount = 0;
@@ -303,28 +319,24 @@ client.on('interactionCreate', async interaction => {
                         scanned++;
                         if (message.attachments.size === 0) continue;
 
-                        // Check each attachment against our items
-                        for (const [key, attachment] of message.attachments) {
-                            if (!attachment.contentType?.startsWith('image/')) continue;
+                        for (const [attKey, attachment] of message.attachments) {
+                            // Match by Discord attachment ID (unique per attachment)
+                            const matchingItem = itemsByAttachmentId[attachment.id];
+                            if (!matchingItem) continue;
 
-                            const matchingItems = itemsByFilename[attachment.name];
-                            if (!matchingItems) continue;
-
-                            // Update URL for matching items if it changed
-                            for (const item of matchingItems) {
-                                if (item.url !== attachment.url) {
-                                    try {
-                                        await db.updateItem(item._id, {
-                                            url: attachment.url,
-                                            messageId: msgId,
-                                            channelId: channelId
-                                        });
-                                        updated++;
-                                        console.log(`[REFRESH] Updated ${item.filename}: ${item.url} -> ${attachment.url}`);
-                                    } catch (err) {
-                                        console.error(`[REFRESH] Failed to update ${item.filename}:`, err);
-                                        failed++;
-                                    }
+                            // Update URL if it changed
+                            if (matchingItem.url !== attachment.url) {
+                                try {
+                                    await db.updateItem(matchingItem._id, {
+                                        url: attachment.url,
+                                        messageId: msgId,
+                                        channelId: channelId
+                                    });
+                                    updated++;
+                                    console.log(`[REFRESH] Updated ${matchingItem.filename} (att:${attachment.id})`);
+                                } catch (err) {
+                                    console.error(`[REFRESH] Failed to update ${matchingItem.filename}:`, err);
+                                    failed++;
                                 }
                             }
                         }
@@ -340,9 +352,9 @@ client.on('interactionCreate', async interaction => {
             }
         }
 
-        await interaction.editReply({
-            content: `✅ **Refresh Complete!**\n📊 Updated: ${updated} | 🔍 Messages scanned: ${scanned} | ❌ Failed: ${failed}`
-        });
+        const summary = [`✅ **Refresh Complete!**`, `📊 Updated: ${updated} | 🔍 Scanned: ${scanned} msgs | ❌ Failed: ${failed}`];
+        if (unmatchable > 0) summary.push(`⚠️ ${unmatchable} items had unrecognizable URLs`);
+        await interaction.editReply({ content: summary.join('\n') });
     }
 });
 
