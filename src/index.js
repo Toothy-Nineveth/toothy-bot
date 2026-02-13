@@ -261,39 +261,87 @@ client.on('interactionCreate', async interaction => {
         }
 
         const items = await db.getInventory(interaction.user.id);
-        let updated = 0;
-        let failed = 0;
-        let skipped = 0;
+        if (items.length === 0) {
+            return await interaction.editReply({ content: '📦 You have no items to refresh.' });
+        }
 
-        await interaction.editReply({ content: `🔄 Refreshing ${items.length} items... Please wait.` });
-
+        // Build a map of filename -> item(s) for quick lookup
+        const itemsByFilename = {};
         for (const item of items) {
-            if (!item.messageId || !item.channelId) {
-                skipped++;
-                continue;
+            if (!itemsByFilename[item.filename]) {
+                itemsByFilename[item.filename] = [];
             }
+            itemsByFilename[item.filename].push(item);
+        }
 
+        let updated = 0;
+        let scanned = 0;
+        let failed = 0;
+
+        await interaction.editReply({ content: `🔄 Scanning ${CHANNEL_IDS.length} channels for ${items.length} items... Please wait.` });
+
+        // Scan each watched channel
+        for (const channelId of CHANNEL_IDS) {
             try {
-                const channel = await client.channels.fetch(item.channelId);
-                const message = await channel.messages.fetch(item.messageId);
+                const channel = await client.channels.fetch(channelId);
+                if (!channel) continue;
 
-                const attachment = Array.from(message.attachments.values())
-                    .find(att => att.name === item.filename);
+                // Fetch last 200 messages from the channel
+                let lastId = null;
+                let fetchedAll = false;
+                let batchCount = 0;
+                const MAX_BATCHES = 4; // 4 batches × 100 = 400 messages max per channel
 
-                if (attachment && attachment.url !== item.url) {
-                    await db.updateItem(item._id, { url: attachment.url });
-                    updated++;
-                } else if (!attachment) {
-                    failed++;
+                while (!fetchedAll && batchCount < MAX_BATCHES) {
+                    const options = { limit: 100 };
+                    if (lastId) options.before = lastId;
+
+                    const messages = await channel.messages.fetch(options);
+                    if (messages.size === 0) break;
+
+                    for (const [msgId, message] of messages) {
+                        scanned++;
+                        if (message.attachments.size === 0) continue;
+
+                        // Check each attachment against our items
+                        for (const [key, attachment] of message.attachments) {
+                            if (!attachment.contentType?.startsWith('image/')) continue;
+
+                            const matchingItems = itemsByFilename[attachment.name];
+                            if (!matchingItems) continue;
+
+                            // Update URL for matching items if it changed
+                            for (const item of matchingItems) {
+                                if (item.url !== attachment.url) {
+                                    try {
+                                        await db.updateItem(item._id, {
+                                            url: attachment.url,
+                                            messageId: msgId,
+                                            channelId: channelId
+                                        });
+                                        updated++;
+                                        console.log(`[REFRESH] Updated ${item.filename}: ${item.url} -> ${attachment.url}`);
+                                    } catch (err) {
+                                        console.error(`[REFRESH] Failed to update ${item.filename}:`, err);
+                                        failed++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    lastId = messages.last().id;
+                    batchCount++;
+                    if (messages.size < 100) fetchedAll = true;
                 }
             } catch (error) {
-                console.error(`Failed to refresh item ${item.filename}:`, error);
+                console.error(`[REFRESH] Failed to scan channel ${channelId}:`, error);
                 failed++;
             }
         }
 
         await interaction.editReply({
-            content: `✅ **Refresh Complete!**\n📊 Updated: ${updated} | ⏭️ Skipped: ${skipped} | ❌ Failed: ${failed}`
+            content: `✅ **Refresh Complete!**\n📊 Updated: ${updated} | 🔍 Messages scanned: ${scanned} | ❌ Failed: ${failed}`
         });
     }
 });
