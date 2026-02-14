@@ -54,7 +54,18 @@ const HOROSCOPE_MESSAGES = [
     "The autopsy report is... up to date!",
     "This is useless.",
     "You should drink only once you're 20!",
-    "Ilzabet is..."
+    "Ilzabet is...",
+    "Cat again.",
+    "Suspiciously warm chair.",
+    "Soggy Bread.",
+    "Honest Child.",
+    "Just a rock.",
+    "Rock again.",
+    "Monday.",
+    "Critical Miss.",
+    "Natural 1.",
+    "Nat 20!",
+    "The Third Child and the Fourth Son."
 ];
 
 /**
