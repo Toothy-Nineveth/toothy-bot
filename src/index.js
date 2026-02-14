@@ -100,8 +100,10 @@ const commands = [
         .setDescription('Get a suggestion for your Bonus Action'),
     new SlashCommandBuilder()
         .setName('recheck')
-        .setDescription('Wipe inventory and re-scan channels for all your ✅ items')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+        .setDescription('Wipe inventory and re-scan channels for all ✅ items')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addUserOption(option =>
+            option.setName('user').setDescription('Target user (default: yourself)').setRequired(false)),
     new SlashCommandBuilder()
         .setName('horoscope')
         .setDescription('Trigger the daily horoscope now (Admin)')
@@ -266,8 +268,11 @@ client.on('interactionCreate', async interaction => {
                 .setStyle(ButtonStyle.Secondary)
         );
 
+        const targetUser = interaction.options.getUser('user') || interaction.user;
+        const targetName = targetUser.id === interaction.user.id ? 'your' : `**${targetUser.username}**'s`;
+
         await interaction.reply({
-            content: '⚠️ **WARNING: Force Recheck**\n\nThis will:\n1. **DELETE** all items in your inventory\n2. Re-scan all channels for images you reacted ✅ to\n3. Re-add those items with fresh URLs\n\n**Notes, quantity changes, and equipment will be lost!**\n\nAre you sure?',
+            content: `⚠️ **WARNING: Force Recheck**\n\nThis will:\n1. **DELETE** all items in ${targetName} inventory\n2. Re-scan all channels for images ${targetName === 'your' ? 'you' : targetUser.username} reacted ✅ to\n3. Re-add those items with fresh URLs\n\n**Notes, quantity changes, and equipment will be lost!**\n\nAre you sure?`,
             components: [row],
             ephemeral: true
         });
@@ -287,7 +292,7 @@ client.on('interactionCreate', async interaction => {
             // Step 2: User confirmed — start the recheck
             await buttonInteraction.update({ content: '🔄 Wiping inventory and scanning channels... This may take a moment.', components: [] });
 
-            const userId = interaction.user.id;
+            const userId = targetUser.id;
 
             // Delete all items for this user
             const deletedCount = await db.deleteAllUserItems(userId);
