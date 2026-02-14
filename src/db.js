@@ -87,6 +87,11 @@ async function deleteItem(itemId) {
     return res.deletedCount > 0;
 }
 
+async function deleteAllUserItems(userId) {
+    const res = await Item.deleteMany({ userId });
+    return res.deletedCount;
+}
+
 // Party Methods
 async function getParty() {
     let party = await Party.findOne();
@@ -116,6 +121,7 @@ module.exports = {
     getItem,
     updateItem,
     deleteItem,
+    deleteAllUserItems,
     getParty,
     updatePartyXP
 };

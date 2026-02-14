@@ -1,7 +1,7 @@
 require('dotenv').config();
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord connection hangs
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
 const { scheduleHoroscope, sendHoroscope } = require('./horoscope');
@@ -99,8 +99,9 @@ const commands = [
         .setName('bonus_action')
         .setDescription('Get a suggestion for your Bonus Action'),
     new SlashCommandBuilder()
-        .setName('refresh_items')
-        .setDescription('Refresh all broken Discord image URLs from original messages'),
+        .setName('recheck')
+        .setDescription('Wipe inventory and re-scan channels for all your ✅ items')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
     new SlashCommandBuilder()
         .setName('horoscope')
         .setDescription('Trigger the daily horoscope now (Admin)')
@@ -251,110 +252,127 @@ client.on('interactionCreate', async interaction => {
         await interaction.editReply({ content: '🔮 Horoscope sent!' });
     }
 
-    // --- REFRESH ITEMS ---
-    else if (interaction.commandName === 'refresh_items') {
-        await interaction.deferReply({ ephemeral: true });
+    // --- RECHECK (Force Re-scan) ---
+    else if (interaction.commandName === 'recheck') {
+        // Step 1: Show warning with confirmation buttons
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('recheck_confirm')
+                .setLabel('⚠️ Yes, wipe and re-scan')
+                .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId('recheck_cancel')
+                .setLabel('Cancel')
+                .setStyle(ButtonStyle.Secondary)
+        );
 
-        const user = await db.getUser(interaction.user.id);
-        if (!user) {
-            return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
-        }
+        await interaction.reply({
+            content: '⚠️ **WARNING: Force Recheck**\n\nThis will:\n1. **DELETE** all items in your inventory\n2. Re-scan all channels for images you reacted ✅ to\n3. Re-add those items with fresh URLs\n\n**Notes, quantity changes, and equipment will be lost!**\n\nAre you sure?',
+            components: [row],
+            ephemeral: true
+        });
 
-        const items = await db.getInventory(interaction.user.id);
-        if (items.length === 0) {
-            return await interaction.editReply({ content: '📦 You have no items to refresh.' });
-        }
+        // Wait for button click (60 second timeout)
+        try {
+            const buttonInteraction = await interaction.channel.awaitMessageComponent({
+                filter: (i) => i.user.id === interaction.user.id && (i.customId === 'recheck_confirm' || i.customId === 'recheck_cancel'),
+                time: 60000
+            });
 
-        // Extract the unique attachment ID from a Discord CDN URL
-        // URL format: https://cdn.discordapp.com/attachments/{channelId}/{attachmentId}/{filename}?...
-        function getAttachmentId(url) {
-            try {
-                const path = new URL(url).pathname; // /attachments/123/456/image.png
-                const parts = path.split('/');
-                // parts = ['', 'attachments', channelId, attachmentId, filename]
-                if (parts.length >= 5 && parts[1] === 'attachments') {
-                    return parts[3]; // the attachment ID
-                }
-            } catch (e) { }
-            return null;
-        }
-
-        // Build a map of attachmentId -> item for quick lookup
-        const itemsByAttachmentId = {};
-        let unmatchable = 0;
-        for (const item of items) {
-            const attId = getAttachmentId(item.url);
-            if (attId) {
-                itemsByAttachmentId[attId] = item;
-            } else {
-                unmatchable++;
+            if (buttonInteraction.customId === 'recheck_cancel') {
+                await buttonInteraction.update({ content: '❌ Recheck cancelled.', components: [] });
+                return;
             }
-        }
 
-        let updated = 0;
-        let scanned = 0;
-        let failed = 0;
+            // Step 2: User confirmed — start the recheck
+            await buttonInteraction.update({ content: '🔄 Wiping inventory and scanning channels... This may take a moment.', components: [] });
 
-        await interaction.editReply({ content: `🔄 Scanning ${CHANNEL_IDS.length} channels for ${items.length} items... Please wait.` });
+            const userId = interaction.user.id;
 
-        // Scan each watched channel
-        for (const channelId of CHANNEL_IDS) {
-            try {
-                const channel = await client.channels.fetch(channelId);
-                if (!channel) continue;
+            // Delete all items for this user
+            const deletedCount = await db.deleteAllUserItems(userId);
+            console.log(`[RECHECK] Deleted ${deletedCount} items for user ${userId}`);
 
-                let lastId = null;
-                let fetchedAll = false;
-                let batchCount = 0;
-                const MAX_BATCHES = 4; // 4 batches × 100 = 400 messages max per channel
+            // Also clear equipment slots
+            await db.updateUser(userId, { slots: {} });
 
-                while (!fetchedAll && batchCount < MAX_BATCHES) {
-                    const options = { limit: 100 };
-                    if (lastId) options.before = lastId;
+            // Step 3: Scan channels for messages with ✅ reaction from this user
+            let added = 0;
+            let scanned = 0;
 
-                    const messages = await channel.messages.fetch(options);
-                    if (messages.size === 0) break;
+            for (const channelId of CHANNEL_IDS) {
+                try {
+                    const channel = await client.channels.fetch(channelId);
+                    if (!channel) continue;
 
-                    for (const [msgId, message] of messages) {
-                        scanned++;
-                        if (message.attachments.size === 0) continue;
+                    let lastId = null;
+                    let fetchedAll = false;
+                    let batchCount = 0;
+                    const MAX_BATCHES = 5; // 500 messages per channel
 
-                        for (const [attKey, attachment] of message.attachments) {
-                            // Match by Discord attachment ID (unique per attachment)
-                            const matchingItem = itemsByAttachmentId[attachment.id];
-                            if (!matchingItem) continue;
+                    while (!fetchedAll && batchCount < MAX_BATCHES) {
+                        const options = { limit: 100 };
+                        if (lastId) options.before = lastId;
 
-                            // Update URL if it changed
-                            if (matchingItem.url !== attachment.url) {
+                        const messages = await channel.messages.fetch(options);
+                        if (messages.size === 0) break;
+
+                        for (const [msgId, message] of messages) {
+                            scanned++;
+                            if (message.attachments.size === 0) continue;
+
+                            // Check if this user reacted with ✅ to this message
+                            const checkReaction = message.reactions.cache.find(r => r.emoji.name === '✅');
+                            if (!checkReaction) continue;
+
+                            try {
+                                const reactors = await checkReaction.users.fetch();
+                                if (!reactors.has(userId)) continue;
+                            } catch (e) {
+                                continue;
+                            }
+
+                            // This user reacted ✅ — re-add all image attachments
+                            const category = CHANNEL_CATEGORY_MAP[channelId] || 'items';
+                            for (const [attKey, attachment] of message.attachments) {
+                                if (!attachment.contentType?.startsWith('image/')) continue;
+
                                 try {
-                                    await db.updateItem(matchingItem._id, {
+                                    await db.addItem(userId, {
+                                        filename: attachment.name,
                                         url: attachment.url,
                                         messageId: msgId,
-                                        channelId: channelId
+                                        channelId: channelId,
+                                        category: category,
+                                        sender: message.author.username,
+                                        content: message.content
                                     });
-                                    updated++;
-                                    console.log(`[REFRESH] Updated ${matchingItem.filename} (att:${attachment.id})`);
-                                } catch (err) {
-                                    console.error(`[REFRESH] Failed to update ${matchingItem.filename}:`, err);
-                                    failed++;
+                                    added++;
+                                } catch (e) {
+                                    console.error(`[RECHECK] Failed to add ${attachment.name}:`, e);
                                 }
                             }
                         }
+
+                        lastId = messages.last().id;
+                        batchCount++;
+                        if (messages.size < 100) fetchedAll = true;
                     }
-
-                    lastId = messages.last().id;
-                    batchCount++;
-                    if (messages.size < 100) fetchedAll = true;
+                } catch (error) {
+                    console.error(`[RECHECK] Failed to scan channel ${channelId}:`, error);
                 }
-            } catch (error) {
-                console.error(`[REFRESH] Failed to scan channel ${channelId}:`, error);
-                failed++;
             }
-        }
 
-        const summary = [`✅ **Refresh Complete!**`, `📊 Updated: ${updated} | 🔍 Scanned: ${scanned} msgs | ❌ Failed: ${failed}`];
-        if (unmatchable > 0) summary.push(`⚠️ ${unmatchable} items had unrecognizable URLs`);
-        await interaction.editReply({ content: summary.join('\n') });
+            await buttonInteraction.editReply({
+                content: `✅ **Recheck Complete!**\n🗑️ Deleted: ${deletedCount} old items\n📦 Re-added: ${added} items\n🔍 Messages scanned: ${scanned}`,
+                components: []
+            });
+            console.log(`[RECHECK] User ${userId}: deleted ${deletedCount}, re-added ${added}, scanned ${scanned} messages`);
+
+        } catch (error) {
+            // Timeout or error
+            await interaction.editReply({ content: '⏰ Recheck timed out. No changes were made.', components: [] });
+        }
     }
 });
 
