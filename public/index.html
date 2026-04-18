@@ -4,114 +4,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D&D Inventory</title>
+    <title>D&D Inventory — Toothy Bot</title>
+    <meta name="description" content="Manage your D&D party inventory, equipment, and gold with Toothy Bot's interactive web interface.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             /* Default Dark Theme */
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --slot-bg: #2a2a2a;
-            --text-color: #e0e0e0;
+            --bg-color: #0a0a0f;
+            --card-bg: rgba(28, 28, 40, 0.85);
+            --card-bg-solid: #1c1c28;
+            --slot-bg: rgba(38, 38, 55, 0.7);
+            --text-color: #e8e8f0;
+            --text-muted: #8888a0;
             --accent-color: #ff6b6b;
+            --accent-glow: rgba(255, 107, 107, 0.25);
             --secondary-color: #4ecdc4;
+            --secondary-glow: rgba(78, 205, 196, 0.2);
             --gold-color: #ffd700;
             --soul-color: #a855f7;
-            --border-color: #444;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glass-blur: 12px;
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
         }
 
         [data-theme="glacial"] {
             --bg-color: #040814;
-            --card-bg: #0A1128;
-            --slot-bg: #0e1a38;
+            --card-bg: rgba(10, 17, 40, 0.85);
+            --card-bg-solid: #0A1128;
+            --slot-bg: rgba(14, 26, 56, 0.7);
             --text-color: #EBF4FA;
+            --text-muted: #6B8BA4;
             --accent-color: #00B4D8;
+            --accent-glow: rgba(0, 180, 216, 0.25);
             --secondary-color: #90E0EF;
+            --secondary-glow: rgba(144, 224, 239, 0.2);
             --gold-color: #CAF0F8;
             --soul-color: #48CAE4;
-            --border-color: #162A45;
+            --border-color: rgba(0, 180, 216, 0.12);
         }
 
         [data-theme="earthy"] {
             --bg-color: #F4F1EA;
-            --card-bg: #FFFFFF;
-            --slot-bg: #f9f8f4;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-bg-solid: #FFFFFF;
+            --slot-bg: rgba(249, 248, 244, 0.9);
             --text-color: #2C3E2D;
+            --text-muted: #6B7B6C;
             --accent-color: #D98A6C;
+            --accent-glow: rgba(217, 138, 108, 0.2);
             --secondary-color: #A3B18A;
+            --secondary-glow: rgba(163, 177, 138, 0.2);
             --gold-color: #bfa15f;
             --soul-color: #8c7853;
-            --border-color: #e0dcd3;
+            --border-color: rgba(0, 0, 0, 0.08);
         }
 
         [data-theme="contrast"] {
             --bg-color: #000000;
-            --card-bg: #111111;
-            --slot-bg: #1a1a1a;
+            --card-bg: rgba(17, 17, 17, 0.95);
+            --card-bg-solid: #111111;
+            --slot-bg: rgba(26, 26, 26, 0.9);
             --text-color: #FFFF00;
+            --text-muted: #CCCC00;
             --accent-color: #FF0000;
+            --accent-glow: rgba(255, 0, 0, 0.3);
             --secondary-color: #00FF00;
+            --secondary-glow: rgba(0, 255, 0, 0.2);
             --gold-color: #FFA500;
             --soul-color: #FF00FF;
-            --border-color: #333333;
+            --border-color: rgba(255, 255, 0, 0.15);
         }
 
         [data-theme="blood"] {
             --bg-color: #0d0202;
-            --card-bg: #1a0505;
-            --slot-bg: #260a0a;
+            --card-bg: rgba(26, 5, 5, 0.85);
+            --card-bg-solid: #1a0505;
+            --slot-bg: rgba(38, 10, 10, 0.7);
             --text-color: #ffb3b3;
+            --text-muted: #994444;
             --accent-color: #b30000;
+            --accent-glow: rgba(179, 0, 0, 0.3);
             --secondary-color: #800000;
+            --secondary-glow: rgba(128, 0, 0, 0.2);
             --gold-color: #d4a017;
             --soul-color: #660000;
-            --border-color: #330000;
+            --border-color: rgba(179, 0, 0, 0.12);
         }
 
         [data-theme="beach"] {
             --bg-color: #e0f7fa;
-            --card-bg: #ffffff;
-            --slot-bg: #f1f8e9;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-bg-solid: #ffffff;
+            --slot-bg: rgba(241, 248, 233, 0.8);
             --text-color: #006064;
+            --text-muted: #00838f;
             --accent-color: #00bcd4;
+            --accent-glow: rgba(0, 188, 212, 0.2);
             --secondary-color: #4db6ac;
+            --secondary-glow: rgba(77, 182, 172, 0.2);
             --gold-color: #fdd835;
             --soul-color: #ffb74d;
-            --border-color: #b2ebf2;
+            --border-color: rgba(0, 188, 212, 0.12);
         }
 
         [data-theme="gold"] {
             --bg-color: #080600;
-            --card-bg: #120e02;
-            --slot-bg: #1c1703;
+            --card-bg: rgba(18, 14, 2, 0.85);
+            --card-bg-solid: #120e02;
+            --slot-bg: rgba(28, 23, 3, 0.7);
             --text-color: #f5dfa0;
+            --text-muted: #8a7a3a;
             --accent-color: #d4a017;
+            --accent-glow: rgba(212, 160, 23, 0.25);
             --secondary-color: #c8860a;
+            --secondary-glow: rgba(200, 134, 10, 0.2);
             --gold-color: #ffd700;
             --soul-color: #7a5c00;
-            --border-color: #3a2d00;
+            --border-color: rgba(212, 160, 23, 0.12);
         }
 
         [data-theme="library"] {
             --bg-color: #0c0914;
-            --card-bg: #160f26;
-            --slot-bg: #1f1535;
+            --card-bg: rgba(22, 15, 38, 0.85);
+            --card-bg-solid: #160f26;
+            --slot-bg: rgba(31, 21, 53, 0.7);
             --text-color: #d8c8f0;
+            --text-muted: #7a6a9a;
             --accent-color: #a855f7;
+            --accent-glow: rgba(168, 85, 247, 0.25);
             --secondary-color: #7c3aed;
+            --secondary-glow: rgba(124, 58, 237, 0.2);
             --gold-color: #c084fc;
             --soul-color: #4c1d95;
-            --border-color: #2e1f4a;
+            --border-color: rgba(168, 85, 247, 0.12);
         }
 
+        /* RESET & BASE */
+        *, *::before, *::after { box-sizing: border-box; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
-            transition: background-color 0.3s, color 0.3s;
+            padding: 16px;
+            transition: background-color 0.5s ease, color 0.3s ease;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* CANVAS */
         #bgCanvas {
             position: fixed;
             top: 0;
@@ -121,7 +166,7 @@
             z-index: -1;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 1s;
+            transition: opacity 1.2s ease;
         }
 
         [data-theme="glacial"] #bgCanvas.active,
@@ -132,89 +177,166 @@
             opacity: 1;
         }
 
-        /* HEADER / XP */
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInModal {
+            from { opacity: 0; transform: scale(0.92) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            50% { box-shadow: 0 0 20px 4px var(--accent-glow); }
+        }
+
+        @keyframes skeletonShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes toastSlide {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes toastSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(120%); opacity: 0; }
+        }
+
+        /* HEADER / TOP BAR */
         .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background: var(--card-bg);
-            padding: 10px 20px;
-            border-radius: 8px;
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            padding: 12px 20px;
+            border-radius: 16px;
             margin-bottom: 20px;
             border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            animation: fadeIn 0.4s ease;
         }
 
         .xp-display {
-            font-size: 1.2em;
-            font-weight: bold;
+            font-size: 1.1em;
+            font-weight: 600;
             color: var(--secondary-color);
+            letter-spacing: 0.02em;
+        }
+
+        .top-bar h1 {
+            margin: 0;
+            font-family: 'Cinzel', serif;
+            font-size: 1.3em;
+            font-weight: 700;
+            display: inline;
+            margin-right: 12px;
+            background: linear-gradient(135deg, var(--accent-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .back-btn {
             background: none;
             border: 1px solid var(--accent-color);
             color: var(--accent-color);
-            padding: 5px 15px;
+            padding: 6px 16px;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 8px;
             display: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--accent-color);
+            color: var(--bg-color);
         }
 
         /* VIEWS */
-        .view-section {
-            display: none;
-        }
-
-        .active-view {
-            display: block;
-        }
+        .view-section { display: none; }
+        .active-view { display: block; animation: fadeInUp 0.5s ease; }
 
         /* USERS LIST */
         .user-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
         }
 
         .user-card {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            padding: 24px;
+            border-radius: 16px;
             text-align: center;
             cursor: pointer;
             border: 1px solid var(--border-color);
-            transition: 0.2s;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: var(--shadow-card);
+            animation: fadeInUp 0.5s ease backwards;
         }
 
         .user-card:hover {
             border-color: var(--secondary-color);
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover), 0 0 20px var(--secondary-glow);
+        }
+
+        .user-card .user-name {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-bottom: 6px;
+            color: var(--text-color);
+        }
+
+        .user-card .user-gold {
+            color: var(--text-muted);
+            font-size: 0.9em;
+            font-weight: 400;
         }
 
         /* INVENTORY DASHBOARD LAYOUT */
         .dashboard {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 340px 1fr;
             gap: 20px;
             align-items: start;
         }
 
         @media (max-width: 1200px) {
-            .source-iframe {
-                height: 875px;
-                top: -25px;
-            }
+            .source-iframe { height: 875px; top: -25px; }
         }
 
-        @media (max-width: 900px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
+        @media (max-width: 960px) {
+            .dashboard { grid-template-columns: 1fr; }
+            .source-iframe { height: 890px; top: -8px; }
+        }
 
-            .source-iframe {
-                height: 890px;
-                top: -8px;
-            }
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .top-bar { flex-direction: column; gap: 10px; text-align: center; padding: 12px; }
+            .dashboard { gap: 12px; }
+            .equipment-panel { padding: 14px; }
+            .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+            .paper-doll { grid-template-columns: 1fr 1fr; gap: 6px; }
         }
 
         .source-iframe {
@@ -229,71 +351,110 @@
         /* EQUIPMENT PANEL */
         .equipment-panel {
             background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            animation: fadeInUp 0.5s ease 0.1s backwards;
+        }
+
+        .equipment-panel h3 {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 1.05em;
+            margin: 0 0 14px 0;
+            color: var(--text-color);
+            letter-spacing: 0.03em;
         }
 
         .currencies {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 20px;
         }
 
+        .currencies > div { flex: 1; }
+
         .currency-input {
-            flex: 1;
-            padding: 8px;
+            width: 100%;
+            padding: 10px;
             background: var(--slot-bg);
             border: 1px solid var(--border-color);
             color: var(--gold-color);
-            font-weight: bold;
-            border-radius: 4px;
+            font-weight: 600;
+            border-radius: 10px;
             text-align: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 1em;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .currency-input:focus {
+            outline: none;
+            border-color: var(--gold-color);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
         }
 
         .soul-input {
             color: var(--soul-color);
+        }
+
+        .soul-input:focus {
             border-color: var(--soul-color);
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
         }
 
         .gold-label {
             color: var(--gold-color);
-            font-size: 0.8em;
+            font-size: 0.75em;
+            font-weight: 600;
             text-align: center;
             display: block;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         .paper-doll {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px;
         }
 
         .slot-container {
             background: var(--slot-bg);
             border: 1px dashed var(--border-color);
-            border-radius: 6px;
+            border-radius: 10px;
             min-height: 80px;
             position: relative;
-            padding: 5px;
+            padding: 6px;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            transition: background 0.2s;
+            transition: all 0.25s ease;
+        }
+
+        .slot-container:hover {
+            border-color: var(--text-muted);
         }
 
         .slot-container.highlight {
-            background: #3a3a3a;
+            background: var(--secondary-glow);
             border-color: var(--secondary-color);
+            border-style: solid;
         }
 
         .slot-label {
-            font-size: 0.7em;
-            color: #888;
+            font-size: 0.65em;
+            font-weight: 600;
+            color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 5px;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
             pointer-events: none;
         }
 
@@ -301,46 +462,140 @@
             width: 50px;
             height: 50px;
             object-fit: cover;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            border: 1px solid #555;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .slot-item-img:hover {
+            transform: scale(1.1);
         }
 
         .unequip-btn {
             position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #522;
+            top: -6px;
+            right: -6px;
+            background: rgba(180, 30, 30, 0.9);
             color: white;
             border: none;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 13px;
             line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .unequip-btn:hover {
+            background: rgba(220, 40, 40, 1);
+        }
+
+        /* CATEGORY TABS */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            background: var(--slot-bg);
+            color: var(--text-muted);
+        }
+
+        .tab-btn.active {
+            background: var(--secondary-color);
+            color: var(--bg-color);
+            border-color: var(--secondary-color);
+            font-weight: 600;
+            box-shadow: 0 0 16px var(--secondary-glow);
+        }
+
+        .tab-btn:not(.active):hover {
+            border-color: var(--text-muted);
+            color: var(--text-color);
+        }
+
+        /* SEARCH */
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-wrapper svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 20px var(--secondary-glow);
+        }
+
+        .search-input:focus ~ svg {
+            color: var(--secondary-color);
         }
 
         /* INVENTORY GRID */
         .inventory-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            gap: 14px;
         }
 
         .item-card {
-            background-color: var(--card-bg);
-            border-radius: 8px;
+            background: var(--card-bg);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-card);
             border: 1px solid var(--border-color);
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
+            animation: fadeInUp 0.4s ease backwards;
         }
 
         .item-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-4px);
             border-color: var(--secondary-color);
+            box-shadow: var(--shadow-hover), 0 0 20px var(--secondary-glow);
         }
 
         .item-card.equipped {
@@ -350,9 +605,10 @@
 
         .item-image-container {
             width: 100%;
-            height: 150px;
+            height: 160px;
             overflow: hidden;
             cursor: zoom-in;
+            position: relative;
         }
 
         .item-card img {
@@ -361,7 +617,7 @@
             object-fit: cover;
             transform: scale(1.5);
             transform-origin: top right;
-            transition: transform 0.3s;
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .item-card img:hover {
@@ -369,31 +625,36 @@
         }
 
         .item-content {
-            padding: 10px;
+            padding: 12px;
         }
 
         .title-container {
             display: flex;
             align-items: center;
-            gap: 5px;
-            margin-bottom: 5px;
+            gap: 6px;
+            margin-bottom: 4px;
         }
 
         .title-container .pencil-icon {
             opacity: 0;
             cursor: pointer;
-            transition: opacity 0.2s;
-            width: 16px;
-            height: 16px;
+            transition: opacity 0.2s ease;
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
         }
 
         .title-container:hover .pencil-icon {
+            opacity: 0.7;
+        }
+
+        .title-container .pencil-icon:hover {
             opacity: 1;
         }
 
         .item-title {
-            font-weight: bold;
-            font-size: 0.95em;
+            font-weight: 600;
+            font-size: 0.9em;
             color: var(--accent-color);
             white-space: nowrap;
             overflow: hidden;
@@ -403,30 +664,41 @@
 
         .edit-title-input {
             width: 100%;
-            padding: 4px;
+            padding: 4px 8px;
             background: var(--slot-bg);
             border: 1px solid var(--secondary-color);
             color: var(--text-color);
-            border-radius: 4px;
-            font-size: 0.95em;
-            margin-bottom: 5px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 4px;
             box-sizing: border-box;
+        }
+
+        .item-meta {
+            font-size: 0.78em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 400;
         }
 
         .item-actions {
             display: flex;
             justify-content: space-between;
-            margin-top: 8px;
-            gap: 5px;
+            gap: 6px;
         }
 
+        /* BUTTONS */
         .btn {
             border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 10px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.75em;
+            font-size: 0.78em;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
             flex: 1;
+            transition: all 0.2s ease;
         }
 
         .btn-edit {
@@ -435,16 +707,66 @@
             border: 1px solid var(--border-color);
         }
 
+        .btn-edit:hover {
+            border-color: var(--text-muted);
+        }
+
         .btn-equip {
             background: var(--secondary-color);
-            color: #121212;
-            font-weight: bold;
+            color: var(--bg-color);
+            font-weight: 600;
+        }
+
+        .btn-equip:hover {
+            box-shadow: 0 0 12px var(--secondary-glow);
         }
 
         .btn-delete {
-            background: #fee;
-            color: #d33;
-            max-width: 30px;
+            background: rgba(200, 40, 40, 0.15);
+            color: #e55;
+            max-width: 36px;
+            border: 1px solid rgba(200, 40, 40, 0.2);
+        }
+
+        .btn-delete:hover {
+            background: rgba(200, 40, 40, 0.3);
+        }
+
+        .btn-danger-full {
+            width: 100%;
+            max-width: 200px;
+            padding: 10px;
+            background: rgba(200, 40, 40, 0.12);
+            color: #e55;
+            border: 1px solid rgba(200, 40, 40, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger-full:hover {
+            background: rgba(200, 40, 40, 0.25);
+        }
+
+        .btn-settings {
+            background: var(--slot-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+            margin-right: 8px;
+        }
+
+        .btn-settings:hover {
+            border-color: var(--text-muted);
         }
 
         /* MODALS */
@@ -456,37 +778,54 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
             justify-content: center;
             align-items: center;
         }
 
         .modal-content {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 8px;
+            background: var(--card-bg-solid);
+            padding: 24px;
+            border-radius: 16px;
             width: 90%;
             max-width: 400px;
             border: 1px solid var(--border-color);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideInModal 0.3s ease;
         }
 
-        select,
-        input,
-        textarea {
+        .modal-content h3 {
+            font-family: 'Cinzel', serif;
+            margin: 0 0 16px 0;
+            font-size: 1.1em;
+        }
+
+        select, input, textarea {
             width: 100%;
             padding: 10px;
             background: var(--slot-bg);
             border: 1px solid var(--border-color);
             color: var(--text-color);
-            border-radius: 4px;
-            margin-bottom: 15px;
+            border-radius: 8px;
+            margin-bottom: 14px;
             box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9em;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary-color);
         }
 
         label {
             display: block;
             margin-bottom: 5px;
-            color: #aaa;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            font-weight: 500;
         }
 
         #modalImg {
@@ -494,8 +833,75 @@
             max-height: 90vh;
             object-fit: contain;
             transform: none;
-            border-radius: 4px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        /* SKELETON LOADER */
+        .skeleton {
+            background: linear-gradient(90deg, var(--slot-bg) 25%, var(--card-bg) 50%, var(--slot-bg) 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-card {
+            height: 260px;
+            border-radius: 14px;
+        }
+
+        .skeleton-user {
+            height: 90px;
+            border-radius: 16px;
+        }
+
+        /* TOAST NOTIFICATIONS */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--card-bg-solid);
+            color: var(--text-color);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88em;
+            font-weight: 500;
+            animation: toastSlide 0.3s ease;
+            max-width: 320px;
+        }
+
+        .toast.success { border-left: 3px solid var(--secondary-color); }
+        .toast.error { border-left: 3px solid #e55; }
+        .toast.info { border-left: 3px solid var(--accent-color); }
+
+        .toast.hiding {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+
+        /* SECTION TITLES */
+        .section-title {
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            font-size: 1.2em;
+        }
+
+        .section-subtitle {
+            font-family: 'Cinzel', serif;
+            font-weight: 500;
+            font-size: 0.95em;
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
         }
     </style>
 </head>
@@ -503,28 +909,36 @@
 <body>
     <canvas id="bgCanvas"></canvas>
 
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <div class="top-bar">
         <div>
-            <span class="xp-display" id="partyXpDisplay">Party XP: Loading...</span>
+            <span class="xp-display" id="partyXpDisplay">Party XP: ...</span>
         </div>
         <div>
-            <h1 style="margin:0; font-size: 1.2em; display:inline; margin-right: 15px;">D&D Inventory</h1>
-            <button class="btn btn-edit" style="margin-right: 10px;" onclick="openSettings()">⚙️ Settings</button>
-            <button id="backBtn" class="back-btn" onclick="showUserList()">Users</button>
+            <h1>D&D Inventory</h1>
+            <button class="btn-settings" onclick="openSettings()">⚙️ Settings</button>
+            <button id="backBtn" class="back-btn" onclick="showUserList()">← Users</button>
         </div>
     </div>
 
     <!-- VIEW 1: USER LIST -->
     <div id="usersView" class="view-section active-view">
         <div style="max-width: 800px; margin: 0 auto;">
-            <h2>Select Adventurer</h2>
-            <div id="userList" class="user-list"></div>
+            <h2 class="section-title">Select Adventurer</h2>
+            <div id="userList" class="user-list">
+                <!-- Skeleton loaders shown initially -->
+                <div class="skeleton skeleton-user"></div>
+                <div class="skeleton skeleton-user"></div>
+                <div class="skeleton skeleton-user"></div>
+            </div>
         </div>
     </div>
 
     <!-- VIEW 2: DASHBOARD -->
     <div id="dashboardView" class="view-section">
-        <h2 id="dashboardTitle" style="margin-top:0;">Inventory</h2>
+        <h2 class="section-title" id="dashboardTitle">Inventory</h2>
 
         <div class="dashboard">
             <!-- LEFT: EQUIPMENT -->
@@ -549,32 +963,34 @@
                 </div>
 
                 <div style="margin-top: 20px; text-align: center;">
-                    <button class="btn btn-delete" style="width: 100%; max-width: 200px; padding: 10px;"
-                        onclick="deleteCharacter()">Delete Character</button>
+                    <button class="btn-danger-full" onclick="deleteCharacter()">Delete Character</button>
                 </div>
             </div>
 
             <!-- RIGHT: INVENTORY -->
             <div>
                 <!-- Category Tabs -->
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button id="itemsTab" class="btn btn-equip" onclick="switchCategory('items')"
-                        style="flex: 1; padding: 10px;">
-                        Items
+                <div class="category-tabs">
+                    <button id="itemsTab" class="tab-btn active" onclick="switchCategory('items')">
+                        🎒 Items
                     </button>
-                    <button id="skillsTab" class="btn btn-edit" onclick="switchCategory('skills')"
-                        style="flex: 1; padding: 10px;">
-                        Skills
+                    <button id="skillsTab" class="tab-btn" onclick="switchCategory('skills')">
+                        📜 Skills
                     </button>
-                    <button id="sourceTab" class="btn btn-edit" onclick="switchCategory('source')"
-                        style="flex: 1; padding: 10px;">
-                        Source
+                    <button id="sourceTab" class="tab-btn" onclick="switchCategory('source')">
+                        📖 Source
                     </button>
                 </div>
 
                 <div id="inventorySection">
-                    <input type="text" id="searchInput" placeholder="Search inventory..." style="margin-bottom:15px;"
-                        onkeyup="renderInventory()">
+                    <div class="search-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search inventory..."
+                            onkeyup="renderInventory()">
+                    </div>
                     <div id="inventoryGrid" class="inventory-grid">
                         <!-- Generated by JS -->
                     </div>
@@ -582,9 +998,8 @@
 
                 <div id="sourceSection" style="display: none;">
                     <div
-                        style="margin-bottom: 20px; padding: 20px; background: #252525; border-radius: 8px; border: 1px solid #444; font-size: 0.9em; line-height: 1.6;">
-                        <h2
-                            style="margin-top: 0; color: var(--secondary-color); font-size: 1.2em; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                        style="margin-bottom: 20px; padding: 20px; background: var(--card-bg); backdrop-filter: blur(var(--glass-blur)); border-radius: 14px; border: 1px solid var(--border-color); font-size: 0.9em; line-height: 1.6;">
+                        <h2 class="section-title" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                             Part 1: Loading Pre-release Content</h2>
                         <ol style="margin-bottom: 15px; padding-left: 20px;">
                             <li><strong>Open Settings:</strong> Click the Settings/Manage Content button (the blue
@@ -596,13 +1011,13 @@
                             <li><strong>Add Links:</strong> Copy and paste the following RAW GitHub links one at a time
                                 (<strong>Load the second link first!</strong>):
                                 <div
-                                    style="margin-top: 10px; padding: 10px; background: #1a1a1a; border-radius: 4px; font-family: monospace; word-break: break-all;">
-                                    <span style="color: #888; font-size: 0.8em;"># Load this one second (and delete
+                                    style="margin-top: 10px; padding: 12px; background: var(--slot-bg); border-radius: 8px; font-family: monospace; word-break: break-all; font-size: 0.85em;">
+                                    <span style="color: var(--text-muted); font-size: 0.85em;"># Load this one second (and delete
                                         after first load):</span><br>
                                     <a href="https://raw.githubusercontent.com/Toothy-Nineveth/toothy-bot/main/public/data/xanathars-lost-notes.json"
                                         target="_blank"
                                         style="color: var(--accent-color);">https://raw.githubusercontent.com/Toothy-Nineveth/toothy-bot/main/public/data/xanathars-lost-notes.json</a><br><br>
-                                    <span style="color: #888; font-size: 0.8em;"># Load this one FIRST:</span><br>
+                                    <span style="color: var(--text-muted); font-size: 0.85em;"># Load this one FIRST:</span><br>
                                     <a href="https://raw.githubusercontent.com/Toothy-Nineveth/toothy-bot/main/public/data/UASSD26.json"
                                         target="_blank"
                                         style="color: var(--accent-color);">https://raw.githubusercontent.com/Toothy-Nineveth/toothy-bot/main/public/data/UASSD26.json</a>
@@ -610,8 +1025,7 @@
                             </li>
                         </ol>
 
-                        <h2
-                            style="margin-top: 25px; color: var(--secondary-color); font-size: 1.2em; border-bottom: 1px solid #444; padding-bottom: 10px;">
+                        <h2 class="section-title" style="margin-top: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                             Part 2: Configuring Filters & Snapshots</h2>
                         <ol style="margin-bottom: 0; padding-left: 20px;">
                             <li><strong>Open Filters:</strong> Click the <strong>Filters</strong> button at the top
@@ -636,9 +1050,9 @@
 
                     <!-- Iframe wrapper to hide the header -->
                     <div
-                        style="overflow: hidden; height: 800px; border-radius: 8px; border: 1px solid #444; background: #fff; position: relative;">
+                        style="overflow: hidden; height: 800px; border-radius: 14px; border: 1px solid var(--border-color); background: #fff; position: relative;">
                         <!-- The 5e.tools header height is cropped with responsive CSS (.source-iframe) -->
-                        <iframe src="https://5e.tools/classes.html#artificer_efa" class="source-iframe"></iframe>
+                        <iframe src="https://5e.tools/classes.html#artificer_efa" class="source-iframe" loading="lazy"></iframe>
                     </div>
                 </div>
             </div>
@@ -667,7 +1081,7 @@
     <div id="equipModal" class="modal">
         <div class="modal-content">
             <h3>Equip Item</h3>
-            <p>Select a slot for this item:</p>
+            <p style="color:var(--text-muted); font-size:0.9em;">Select a slot for this item:</p>
             <select id="slotSelect">
                 <!-- Populated by JS -->
             </select>
@@ -699,11 +1113,11 @@
                 <option value="contrast">High Contrast (Accessibility)</option>
             </select>
 
-            <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-top:8px;">
                 <input type="checkbox" id="shaderToggle" onchange="toggleShader()" style="width:auto; margin:0;">
                 Enable Background Effects (WebGL)
             </label>
-            <small style="color:#888; display:block; margin-top:5px;">Disable for better performance on low-end devices.</small>
+            <small style="color:var(--text-muted); display:block; margin-top:5px;">Disable for better performance on low-end devices.</small>
         </div>
     </div>
 
@@ -718,22 +1132,44 @@
         // --- STATE ---
         let currentUser = null;
         let currentItems = [];
-        let currentCategory = 'items'; // Current category tab: 'items' or 'skills'
+        let currentCategory = 'items';
         let partyXP = 0;
 
-        // --- INIT ---
+        // --- INIT (single listener) ---
         document.addEventListener('DOMContentLoaded', () => {
             loadSettings();
             initWebGL();
             loadPartyXP();
-            loadUsers();
             initPaperDoll();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('userId');
+
+            if (userId) {
+                loadDashboard(userId);
+            } else {
+                loadUsers();
+            }
         });
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
 
         // --- SETTINGS & THEMES ---
         function loadSettings() {
             const savedTheme = localStorage.getItem('dnd-theme') || 'default';
-            const useShaders = localStorage.getItem('dnd-shaders') !== 'false'; // Default to true
+            const useShaders = localStorage.getItem('dnd-shaders') !== 'false';
 
             document.getElementById('themeSelect').value = savedTheme;
             document.getElementById('shaderToggle').checked = useShaders;
@@ -802,12 +1238,54 @@
         let glContextActive = false;
         let glAnimationId;
         let currentShaderTheme = null;
-        let glPrograms = {}; // Store compiled programs by theme
+        let glPrograms = {};
         
         function initWebGL() {
             const canvas = document.getElementById('bgCanvas');
-            const gl = canvas.getContext('webgl');
+            const gl = canvas.getContext('webgl', { 
+                alpha: false, 
+                preserveDrawingBuffer: false,
+                powerPreference: 'low-power' // Save GPU/battery
+            });
             if (!gl) return;
+
+            // Handle WebGL context loss/restore
+            canvas.addEventListener('webglcontextlost', (e) => {
+                e.preventDefault();
+                console.log('[SHADER] WebGL context lost');
+                glContextActive = false;
+                if (glAnimationId) cancelAnimationFrame(glAnimationId);
+            });
+
+            canvas.addEventListener('webglcontextrestored', () => {
+                console.log('[SHADER] WebGL context restored, re-initializing...');
+                initWebGL(); // Re-init everything
+                const savedTheme = localStorage.getItem('dnd-theme') || 'default';
+                const useShaders = localStorage.getItem('dnd-shaders') !== 'false';
+                applyShaders(savedTheme, useShaders);
+            });
+
+            // Pause/resume on tab visibility (saves CPU/GPU when tab hidden)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    if (glContextActive) {
+                        cancelAnimationFrame(glAnimationId);
+                        glAnimationId = null;
+                    }
+                } else {
+                    if (glContextActive && currentShaderTheme) {
+                        // Resume rendering
+                        const data = canvas.webglData;
+                        if (data && data.programs[currentShaderTheme]) {
+                            const program = data.programs[currentShaderTheme];
+                            const posLoc = data.gl.getAttribLocation(program, "aVertexPosition");
+                            const timeLoc = data.gl.getUniformLocation(program, "u_time");
+                            const resLoc = data.gl.getUniformLocation(program, "u_resolution");
+                            startRenderLoop(data.gl, program, posLoc, timeLoc, resLoc, data.positionBuffer, canvas);
+                        }
+                    }
+                }
+            });
 
             const vsSource = `
                 attribute vec4 aVertexPosition;
@@ -840,7 +1318,7 @@
                 }
             `;
 
-            // Blood Stain Shader (Viscous, wavy, subtle)
+            // Blood Stain Shader
             const fsBlood = `
                 precision mediump float;
                 uniform vec2 u_resolution;
@@ -865,7 +1343,7 @@
                 }
             `;
 
-            // Beach Episode Shader — slow caustic water/ocean waves
+            // Beach Episode Shader
             const fsBeach = `
                 precision mediump float;
                 uniform vec2 u_resolution;
@@ -878,7 +1356,6 @@
 
                     float t = u_time * 0.4;
                     
-                    // Layered sine waves for water surface effect
                     float wave1 = sin(st.x * 3.0 + t) * 0.5 + 0.5;
                     float wave2 = sin(st.y * 4.0 - t * 0.7) * 0.5 + 0.5;
                     float wave3 = sin((st.x + st.y) * 2.0 + t * 0.5) * 0.5 + 0.5;
@@ -896,7 +1373,7 @@
                 }
             `;
 
-            // Toothy Gold Shader — intersecting golden spiral filigree
+            // Toothy Gold Shader
             const fsGold = `
                 precision mediump float;
                 uniform vec2 u_resolution;
@@ -904,7 +1381,6 @@
 
                 #define PI 3.14159265
 
-                // Smooth line mask around value v with given width
                 float line(float v, float width) {
                     return smoothstep(width, 0.0, abs(v));
                 }
@@ -916,11 +1392,9 @@
 
                     float t = u_time * 0.10;
 
-                    // Multiple overlapping polar spirals
                     float glow = 0.0;
                     for (int i = 0; i < 5; i++) {
                         float fi = float(i);
-                        // Offset each spiral's centre slightly
                         vec2 center = vec2(
                             0.5 * aspect + sin(t + fi * 1.3) * 0.25,
                             0.5           + cos(t + fi * 0.9) * 0.20
@@ -929,19 +1403,16 @@
                         float r = length(d);
                         float a = atan(d.y, d.x);
 
-                        // Archimedean spiral: a + r*k = const (mod 2PI)
                         float k      = 4.0 + fi * 1.5;
                         float spiral = mod(a + r * k + t * (1.0 + fi * 0.3), PI * 2.0) - PI;
 
-                        // Thin glowing line along spiral
                         float l = line(spiral, 0.08) * (1.0 - smoothstep(0.0, 0.7, r));
                         glow += l * (0.5 + 0.5 * sin(r * 8.0 - t * 2.0 + fi));
                     }
                     glow = clamp(glow * 0.55, 0.0, 1.0);
 
-                    // Subtle warm haze in bg
                     vec3 bg    = vec3(0.032, 0.024, 0.000);
-                    vec3 gold  = vec3(0.824, 0.627, 0.039);  // #D4A00A
+                    vec3 gold  = vec3(0.824, 0.627, 0.039);
                     vec3 white = vec3(1.0,   0.95,  0.7);
 
                     vec3 finalColor = bg + gold * glow + white * glow * glow * 0.4;
@@ -949,7 +1420,7 @@
                 }
             `;
 
-            // Great Library Shader — smooth mesh gradient with atmospheric grain
+            // Great Library Shader
             const fsLibrary = `
                 precision mediump float;
                 uniform vec2 u_resolution;
@@ -967,7 +1438,6 @@
 
                     float t = u_time * 0.2;
 
-                    // Mesh Gradient centers moving around
                     vec2 c1 = vec2(0.5 + 0.3 * sin(t * 0.7), 0.5 + 0.3 * cos(t * 0.5));
                     vec2 c2 = vec2(0.5 + 0.4 * cos(t * 0.4), 0.5 + 0.2 * sin(t * 0.8));
                     vec2 c3 = vec2(0.3 + 0.2 * sin(t * 1.1), 0.7 + 0.2 * cos(t * 0.6));
@@ -976,24 +1446,20 @@
                     c2.x *= aspect;
                     c3.x *= aspect;
 
-                    // Colors
-                    vec3 colBase = vec3(0.047, 0.035, 0.102); // #0c091a
-                    vec3 col1    = vec3(0.30,  0.11,  0.58);  // Arcane Violet
-                    vec3 col2    = vec3(0.12,  0.11,  0.29);  // Deep Indigo
-                    vec3 col3    = vec3(0.49,  0.23,  0.93);  // Soft Magenta
+                    vec3 colBase = vec3(0.047, 0.035, 0.102);
+                    vec3 col1    = vec3(0.30,  0.11,  0.58);
+                    vec3 col2    = vec3(0.12,  0.11,  0.29);
+                    vec3 col3    = vec3(0.49,  0.23,  0.93);
 
-                    // Distances
                     float d1 = 1.0 / (1.0 + pow(length(p - c1) * 2.0, 2.0));
                     float d2 = 1.0 / (1.0 + pow(length(p - c2) * 1.5, 2.0));
                     float d3 = 1.0 / (1.0 + pow(length(p - c3) * 2.5, 2.0));
 
-                    // Combine colors
                     vec3 color = colBase;
                     color = mix(color, col1, d1 * 0.8);
                     color = mix(color, col2, d2 * 0.7);
                     color = mix(color, col3, d3 * 0.6);
 
-                    // Add a fine grain texture
                     float grain = (hash(st + t * 0.01) - 0.5) * 0.04;
                     color += grain;
 
@@ -1050,23 +1516,10 @@
             canvas.webglData = { gl, programs: glPrograms, positionBuffer };
         }
 
-        function startWebGL(theme) {
-            const canvas = document.getElementById('bgCanvas');
-            const data = canvas.webglData;
-            if (!data || !data.programs[theme]) return;
-            
-            glContextActive = true;
-            const { gl, programs, positionBuffer } = data;
-            const program = programs[theme];
-            
-            const positionAttributeLocation = gl.getAttribLocation(program, "aVertexPosition");
-            const timeLocation = gl.getUniformLocation(program, "u_time");
-            const resLocation = gl.getUniformLocation(program, "u_resolution");
-
+        function startRenderLoop(gl, program, positionAttributeLocation, timeLocation, resLocation, positionBuffer, canvas) {
             function render(time) {
                 if (!glContextActive) return;
 
-                // Resize canvas to match display size
                 const displayWidth  = canvas.clientWidth;
                 const displayHeight = canvas.clientHeight;
 
@@ -1093,10 +1546,28 @@
             glAnimationId = requestAnimationFrame(render);
         }
 
+        function startWebGL(theme) {
+            const canvas = document.getElementById('bgCanvas');
+            const data = canvas.webglData;
+            if (!data || !data.programs[theme]) return;
+            
+            glContextActive = true;
+            const { gl, programs, positionBuffer } = data;
+            const program = programs[theme];
+            
+            const positionAttributeLocation = gl.getAttribLocation(program, "aVertexPosition");
+            const timeLocation = gl.getUniformLocation(program, "u_time");
+            const resLocation = gl.getUniformLocation(program, "u_resolution");
+
+            startRenderLoop(gl, program, positionAttributeLocation, timeLocation, resLocation, positionBuffer, canvas);
+        }
+
         function stopWebGL() {
             glContextActive = false;
+            currentShaderTheme = null;
             if (glAnimationId) {
                 cancelAnimationFrame(glAnimationId);
+                glAnimationId = null;
             }
         }
 
@@ -1112,59 +1583,63 @@
 
         // --- LOADERS ---
         async function loadPartyXP() {
-            const res = await fetch('/api/party');
-            const data = await res.json();
-            document.getElementById('partyXpDisplay').innerText = `Party XP: ${data.xp}`;
+            try {
+                const res = await fetch('/api/party');
+                const data = await res.json();
+                document.getElementById('partyXpDisplay').innerText = `Party XP: ${data.xp}`;
+            } catch (e) {
+                document.getElementById('partyXpDisplay').innerText = 'Party XP: --';
+            }
         }
 
         async function loadUsers() {
-            const res = await fetch('/api/users');
-            const users = await res.json();
-            const list = document.getElementById('userList');
-            list.innerHTML = users.map(u => `
-                <div class="user-card" onclick="loadDashboard('${u.id}')">
-                    <div style="font-weight:bold; font-size:1.1em; margin-bottom:5px;">${u.name}</div>
-                    <div style="color:#888; font-size:0.9em;">GP: ${u.gold || 0}</div>
-                </div>
-            `).join('');
-            showView('usersView');
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const list = document.getElementById('userList');
+                
+                if (users.length === 0) {
+                    list.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No adventurers found. Use <code>/setup_profile</code> to get started.</p>';
+                    showView('usersView');
+                    return;
+                }
+
+                list.innerHTML = users.map((u, i) => `
+                    <div class="user-card" onclick="loadDashboard('${u.id}')" style="animation-delay: ${i * 0.08}s">
+                        <div class="user-name">${u.name}</div>
+                        <div class="user-gold">💰 ${u.gold || 0} GP</div>
+                    </div>
+                `).join('');
+                showView('usersView');
+            } catch (e) {
+                console.error('Failed to load users:', e);
+                document.getElementById('userList').innerHTML = '<p style="color:#e55; text-align:center;">Failed to load users.</p>';
+            }
         }
 
-        // Initialize: Check for userId in URL
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get('userId');
-
-            if (userId) {
-                // Auto-load specific user's inventory
-                loadDashboard(userId);
-            } else {
-                // Show user selection screen
-                loadUsers();
-            }
-        });
-
         async function loadDashboard(userId) {
-            const res = await fetch(`/api/inventory/${userId}`);
-            const data = await res.json();
-            currentUser = data.user;
-            currentItems = data.items;
+            try {
+                const res = await fetch(`/api/inventory/${userId}`);
+                const data = await res.json();
+                currentUser = data.user;
+                currentItems = data.items;
 
-            // Header
-            document.getElementById('dashboardTitle').innerText = `${currentUser.name}'s Inventory`;
-            document.getElementById('goldInput').value = currentUser.gold || 0;
-            document.getElementById('soulInput').value = currentUser.soulCoins || 0;
+                document.getElementById('dashboardTitle').innerText = `${currentUser.name}'s Inventory`;
+                document.getElementById('goldInput').value = currentUser.gold || 0;
+                document.getElementById('soulInput').value = currentUser.soulCoins || 0;
 
-            renderPaperDoll();
-            renderInventory();
-            showView('dashboardView');
+                renderPaperDoll();
+                renderInventory();
+                showView('dashboardView');
+            } catch (e) {
+                console.error('Failed to load dashboard:', e);
+                showToast('Failed to load inventory', 'error');
+            }
         }
 
         // --- RENDERERS ---
         function renderPaperDoll() {
             const slots = currentUser.slots || {};
-            console.log('Rendering paper doll. Slots:', slots);
-            console.log('Current items:', currentItems.map(i => ({ id: i.id, filename: i.filename })));
 
             SLOTS.forEach(slot => {
                 const safeName = slot.replace(/\s/g, '');
@@ -1172,9 +1647,7 @@
                 const itemId = slots[slot];
 
                 if (itemId) {
-                    console.log(`Looking for item ${itemId} in slot ${slot}`);
                     const item = currentItems.find(i => i.id === itemId);
-                    console.log('Found item:', item);
 
                     if (item) {
                         div.innerHTML = `
@@ -1182,12 +1655,10 @@
                             <button class="unequip-btn" onclick="unequip('${slot}')">×</button>
                         `;
                     } else {
-                        // Item might have been deleted but still equipped
-                        console.warn(`Item ${itemId} not found in currentItems for slot ${slot}`);
-                        div.innerHTML = '<span style="color:red; font-size:0.8em">Missing</span>';
+                        div.innerHTML = '<span style="color:var(--text-muted); font-size:0.75em">Missing</span>';
                     }
                 } else {
-                    div.innerHTML = '<span style="color:#444; font-size:1.5em">+</span>';
+                    div.innerHTML = '<span style="color:var(--text-muted); font-size:1.2em; opacity:0.3">+</span>';
                 }
             });
         }
@@ -1198,21 +1669,25 @@
             const equippedIds = Object.values(currentUser.slots || {});
 
             const filtered = currentItems.filter(item => {
-                // Filter by category
                 const itemCategory = item.category || 'items';
                 if (itemCategory !== currentCategory) return false;
-
-                // Filter by search
                 const text = (item.filename + ' ' + (item.notes || '')).toLowerCase();
                 return text.includes(search);
             });
 
-            grid.innerHTML = filtered.map(item => {
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center; padding: 40px 0;">
+                    ${search ? 'No items match your search.' : 'No items in this category yet.'}
+                </p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map((item, i) => {
                 const isEquipped = equippedIds.includes(item.id);
                 return `
-                <div class="item-card ${isEquipped ? 'equipped' : ''}">
+                <div class="item-card ${isEquipped ? 'equipped' : ''}" style="animation-delay: ${i * 0.04}s">
                     <div class="item-image-container" onclick="viewImage('${item.url}')">
-                        <img src="${item.url}">
+                        <img src="${item.url}" alt="${item.filename}" loading="lazy">
                     </div>
                     <div class="item-content">
                         <div class="title-container" id="title-container-${item.id}">
@@ -1222,11 +1697,11 @@
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
                         </div>
-                        <div style="font-size:0.8em; color:#888; margin-bottom:5px;">Qty: ${item.quantity}</div>
+                        <div class="item-meta">Qty: ${item.quantity}${item.notes ? ' • ' + item.notes.substring(0, 30) : ''}</div>
                         <div class="item-actions">
                             <button class="btn btn-equip" onclick="openEquip('${item.id}')">${isEquipped ? 'Move' : 'Equip'}</button>
                             <button class="btn btn-edit" onclick="openEdit('${item.id}')">Edit</button>
-                            <button class="btn btn-delete" onclick="deleteItem('${item.id}')">X</button>
+                            <button class="btn btn-delete" onclick="deleteItem('${item.id}')">✕</button>
                         </div>
                     </div>
                 </div>
@@ -1241,11 +1716,16 @@
             currentUser.gold = gold;
             currentUser.soulCoins = soulCoins;
 
-            await fetch(`/api/user/${currentUser.id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gold, soulCoins })
-            });
+            try {
+                await fetch(`/api/user/${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ gold, soulCoins })
+                });
+                showToast('Currency updated', 'success');
+            } catch (e) {
+                showToast('Failed to save currency', 'error');
+            }
         }
 
         function openEquip(itemId) {
@@ -1253,7 +1733,6 @@
             const select = document.getElementById('slotSelect');
             document.getElementById('equipItemId').value = itemId;
 
-            // Populate options
             select.innerHTML = SLOTS.map(slot => {
                 const current = currentUser.slots?.[slot];
                 const label = current ? `${slot} (Replace)` : slot;
@@ -1272,12 +1751,9 @@
                 const itemId = document.getElementById('equipItemId').value;
                 const slot = document.getElementById('slotSelect').value;
 
-                console.log('Equipping:', { itemId, slot, userId: currentUser.id });
-
                 if (!currentUser.slots) currentUser.slots = {};
                 currentUser.slots[slot] = itemId;
 
-                // Save
                 const response = await fetch(`/api/user/${currentUser.id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1285,17 +1761,16 @@
                 });
 
                 if (!response.ok) {
-                    console.error('Equipment save failed:', response.status, response.statusText);
-                    alert('Failed to save equipment. Check console for details.');
+                    showToast('Failed to save equipment', 'error');
                     return;
                 }
 
-                console.log('Equipment saved successfully');
+                showToast(`Item equipped to ${slot}`, 'success');
                 closeEquipModal();
-                await loadDashboard(currentUser.id); // Refresh
+                await loadDashboard(currentUser.id);
             } catch (error) {
                 console.error('Error in confirmEquip:', error);
-                alert('Error equipping item: ' + error.message);
+                showToast('Error equipping item', 'error');
             }
         }
 
@@ -1307,6 +1782,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ slots: currentUser.slots })
                 });
+                showToast(`Unequipped ${slot}`, 'info');
                 loadDashboard(currentUser.id);
             }
         }
@@ -1331,7 +1807,6 @@
 
             const container = document.getElementById(`title-container-${id}`);
             
-            // Swap with input
             container.innerHTML = `
                 <input type="text" 
                     class="edit-title-input" 
@@ -1341,7 +1816,6 @@
                     onkeydown="if(event.key === 'Enter') saveTitle('${id}')">
             `;
             
-            // Focus the new input and select text
             const input = document.getElementById(`edit-title-input-${id}`);
             input.focus();
             input.select();
@@ -1349,28 +1823,27 @@
 
         async function saveTitle(id) {
             const input = document.getElementById(`edit-title-input-${id}`);
-            if (!input) return; // Already saved or unmounted
+            if (!input) return;
 
             const newTitle = input.value.trim();
             const item = currentItems.find(i => i.id === id);
 
             if (newTitle && newTitle !== item.filename) {
-                // Optimistic UI update
                 item.filename = newTitle;
                 
-                // Save to backend
                 try {
                     await fetch(`/api/items/${id}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ filename: newTitle })
                     });
+                    showToast('Title updated', 'success');
                 } catch (e) {
                     console.error("Failed to save title", e);
+                    showToast('Failed to save title', 'error');
                 }
             }
 
-            // Re-render inventory grid to restore standard title HTML
             renderInventory();
         }
 
@@ -1379,20 +1852,30 @@
             const quantity = parseInt(document.getElementById('editQty').value);
             const notes = document.getElementById('editNotes').value;
 
-            await fetch(`/api/items/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quantity, notes })
-            });
+            try {
+                await fetch(`/api/items/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity, notes })
+                });
 
-            document.getElementById('editModal').style.display = 'none';
-            loadDashboard(currentUser.id);
+                document.getElementById('editModal').style.display = 'none';
+                showToast('Item updated', 'success');
+                loadDashboard(currentUser.id);
+            } catch (e) {
+                showToast('Failed to save changes', 'error');
+            }
         }
 
         async function deleteItem(id) {
             if (!confirm('Delete this item?')) return;
-            await fetch(`/api/items/${id}`, { method: 'DELETE' });
-            loadDashboard(currentUser.id);
+            try {
+                await fetch(`/api/items/${id}`, { method: 'DELETE' });
+                showToast('Item deleted', 'info');
+                loadDashboard(currentUser.id);
+            } catch (e) {
+                showToast('Failed to delete item', 'error');
+            }
         }
 
         function showView(viewId) {
@@ -1404,10 +1887,9 @@
         function switchCategory(category) {
             currentCategory = category;
 
-            // Update tab button styles
-            document.getElementById('itemsTab').className = category === 'items' ? 'btn btn-equip' : 'btn btn-edit';
-            document.getElementById('skillsTab').className = category === 'skills' ? 'btn btn-equip' : 'btn btn-edit';
-            document.getElementById('sourceTab').className = category === 'source' ? 'btn btn-equip' : 'btn btn-edit';
+            document.getElementById('itemsTab').className = category === 'items' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('skillsTab').className = category === 'skills' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('sourceTab').className = category === 'source' ? 'tab-btn active' : 'tab-btn';
 
             if (category === 'source') {
                 document.getElementById('inventorySection').style.display = 'none';
@@ -1415,7 +1897,6 @@
             } else {
                 document.getElementById('inventorySection').style.display = 'block';
                 document.getElementById('sourceSection').style.display = 'none';
-                // Re-render inventory with new filter
                 renderInventory();
             }
         }
@@ -1428,9 +1909,13 @@
             if (!currentUser) return;
             if (!confirm(`Are you sure you want to delete ${currentUser.name}? This cannot be undone.`)) return;
 
-            await fetch(`/api/users/${currentUser.id}`, { method: 'DELETE' });
-            alert('Character deleted.');
-            showUserList();
+            try {
+                await fetch(`/api/users/${currentUser.id}`, { method: 'DELETE' });
+                showToast('Character deleted', 'info');
+                showUserList();
+            } catch (e) {
+                showToast('Failed to delete character', 'error');
+            }
         }
     </script>
 </body>

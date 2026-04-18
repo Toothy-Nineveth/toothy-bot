@@ -3,6 +3,9 @@ const User = require('./models/User');
 const Item = require('./models/Item');
 const Party = require('./models/Party');
 
+// Fail fast instead of buffering commands when disconnected (saves Railway compute)
+mongoose.set('bufferCommands', false);
+
 // Connect to MongoDB
 async function connect() {
     if (!process.env.MONGODB_URI) {
@@ -13,6 +16,7 @@ async function connect() {
         await mongoose.connect(process.env.MONGODB_URI, {
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
+            heartbeatFrequencyMS: 30000, // Reduce heartbeat frequency to save bandwidth
         });
         console.log("Connected to MongoDB via Mongoose");
 
@@ -20,10 +24,23 @@ async function connect() {
             console.error('Mongoose connection error:', err);
         });
         mongoose.connection.on('disconnected', () => {
-            console.warn('Mongoose disconnected');
+            console.warn('Mongoose disconnected. Will auto-reconnect...');
+        });
+        mongoose.connection.on('reconnected', () => {
+            console.log('Mongoose reconnected successfully.');
         });
     } catch (e) {
         console.error("MongoDB Connection Error:", e);
+    }
+}
+
+// Graceful disconnect
+async function disconnect() {
+    try {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed gracefully.');
+    } catch (e) {
+        console.error('Error closing MongoDB connection:', e);
     }
 }
 
@@ -92,6 +109,12 @@ async function deleteAllUserItems(userId) {
     return res.deletedCount;
 }
 
+// Search items by name (case-insensitive, partial match)
+async function searchItems(userId, query) {
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    return await Item.find({ userId, filename: regex }).sort({ timestamp: -1 });
+}
+
 // Party Methods
 async function getParty() {
     let party = await Party.findOne();
@@ -111,6 +134,7 @@ async function updatePartyXP(amount) {
 
 module.exports = {
     connect,
+    disconnect,
     upsertUser,
     getUser,
     updateUser,
@@ -122,6 +146,7 @@ module.exports = {
     updateItem,
     deleteItem,
     deleteAllUserItems,
+    searchItems,
     getParty,
     updatePartyXP,
     clearAllItems: async function () {

@@ -56,8 +56,17 @@ const commands = [
         .setName('bonus_action')
         .setDescription('Get a suggestion for your Bonus Action'),
     new SlashCommandBuilder()
-        .setName('refresh_items')
-        .setDescription('Refresh all broken Discord image URLs from original messages'),
+        .setName('recheck')
+        .setDescription('Admin: Wipe and re-check inventory for a user (or yourself)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addUserOption(option =>
+            option.setName('user')
+                .setDescription('The user to recheck (defaults to you)')
+                .setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('nuke')
+        .setDescription('Admin: NUKE EVERYTHING and rescan ALL channels for ALL users (Fast)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
     new SlashCommandBuilder()
         .setName('horoscope')
         .setDescription('Trigger the daily horoscope now (Admin)')
@@ -82,9 +91,12 @@ const commands = [
         .addStringOption(option =>
             option.setName('text').setDescription('The tutorial text to send').setRequired(true)),
     new SlashCommandBuilder()
-        .setName('download_images')
-        .setDescription('Download all Cloudinary images as a ZIP archive (Admin)')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .setName('item')
+        .setDescription('Search for an item by name and display its image')
+        .addStringOption(option =>
+            option.setName('name').setDescription('Item name to search for').setRequired(true))
+        .addUserOption(option =>
+            option.setName('user').setDescription('User whose inventory to search (defaults to you)').setRequired(false)),
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);

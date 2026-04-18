@@ -1,11 +1,11 @@
 require('dotenv').config();
 const dns = require('node:dns');
 dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord connection hangs
-const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
 const { scheduleHoroscope, sendHoroscope } = require('./horoscope');
-const { uploadToCloudinary, getDownloadArchiveUrl } = require('./cloudinary');
+const { uploadToCloudinary } = require('./cloudinary');
 
 // Connect to DB
 // Database connection managed in init()
@@ -13,6 +13,7 @@ const { uploadToCloudinary, getDownloadArchiveUrl } = require('./cloudinary');
 // Config
 const CHANNEL_IDS = process.env.CHANNEL_ID ? process.env.CHANNEL_ID.split(',').map(id => id.trim()) : [];
 const BASE_URL = process.env.BASE_URL || 'https://toothy-bot-production.up.railway.app';
+const MAX_LOGIN_RETRIES = 5;
 
 // Channel-to-Category mapping
 const CHANNEL_CATEGORY_MAP = {
@@ -37,6 +38,22 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
+// Graceful shutdown handler (Railway sends SIGTERM)
+async function gracefulShutdown(signal) {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    try {
+        client.destroy();
+        console.log('Discord client destroyed.');
+    } catch (e) { /* ignore */ }
+    try {
+        await db.disconnect();
+    } catch (e) { /* ignore */ }
+    process.exit(0);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 // Initialize Client
 const client = new Client({
     intents: [
@@ -48,13 +65,12 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// START SERVER
-// START SERVER (Managed in init)
-
-client.on('debug', info => {
-    // Filter out heartbeat messages to keep logs clean
-    if (!info.includes('Heartbeat')) console.log(`[DEBUG] ${info}`);
-});
+// Debug logging — opt-in only (set DEBUG=true in env to enable)
+if (process.env.DEBUG === 'true') {
+    client.on('debug', info => {
+        if (!info.includes('Heartbeat')) console.log(`[DEBUG] ${info}`);
+    });
+}
 
 client.on('error', error => {
     console.error('[CLIENT ERROR]', error);
@@ -129,9 +145,18 @@ const commands = [
                 .setDescription('Name of the condition to look up')
                 .setRequired(true)),
     new SlashCommandBuilder()
-        .setName('download_images')
-        .setDescription('Download all Cloudinary images as a ZIP archive (Admin)')
+        .setName('toothytorial')
+        .setDescription('Send a tutorial message (Admin Only)')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addStringOption(option =>
+            option.setName('text').setDescription('The tutorial text to send').setRequired(true)),
+    new SlashCommandBuilder()
+        .setName('item')
+        .setDescription('Search for an item by name and display its image')
+        .addStringOption(option =>
+            option.setName('name').setDescription('Item name to search for').setRequired(true))
+        .addUserOption(option =>
+            option.setName('user').setDescription('User whose inventory to search (defaults to you)').setRequired(false)),
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -176,6 +201,7 @@ client.on('interactionCreate', async interaction => {
 **Managing Inventory:**
 • React with ✅ to images posted in designated channels to add items
 • \`/inventory\` - Get a link to your web inventory
+• \`/item <name>\` - Search for an item and display its image
 • Use the web interface to:
   - Equip/unequip items to armor slots
   - Update Gold and Soul Coins
@@ -191,7 +217,7 @@ client.on('interactionCreate', async interaction => {
 **DM Tools:**
 \`/admin_view @user\` - View another player's inventory
 \`/bonus_action\` - Get a random bonus action suggestion
-\`/refresh_items\` - Fix broken Discord image URLs
+\`/recheck\` - Force re-scan inventory from channels
 
 **Need more help?** Contact your DM!
         `;
@@ -214,6 +240,84 @@ client.on('interactionCreate', async interaction => {
             return await interaction.editReply({ content: `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.` });
         }
         await interaction.editReply({ content: `🎒 **${user.name}'s Inventory**: ${BASE_URL}/index.html?userId=${interaction.user.id}` });
+    }
+
+    // --- ITEM SEARCH ---
+    else if (interaction.commandName === 'item') {
+        await interaction.deferReply();
+        const searchName = interaction.options.getString('name');
+        const targetUser = interaction.options.getUser('user') || interaction.user;
+
+        // Check if target user has a profile
+        const profile = await db.getUser(targetUser.id);
+        if (!profile) {
+            return await interaction.editReply({
+                content: targetUser.id === interaction.user.id
+                    ? `❌ You don't have a profile yet! Use \`/setup_profile <name>\` first.`
+                    : `❌ That user has not set up a profile.`
+            });
+        }
+
+        // Search for items
+        const items = await db.searchItems(targetUser.id, searchName);
+
+        if (items.length === 0) {
+            return await interaction.editReply({
+                content: `❌ No items matching "**${searchName}**" found in **${profile.name}**'s inventory.`
+            });
+        }
+
+        // Best match: exact > starts-with > contains
+        const lowerSearch = searchName.toLowerCase();
+        let bestMatch = items[0];
+        for (const item of items) {
+            const lowerName = item.filename.toLowerCase();
+            if (lowerName === lowerSearch) {
+                bestMatch = item;
+                break;
+            } else if (lowerName.startsWith(lowerSearch) && !bestMatch.filename.toLowerCase().startsWith(lowerSearch)) {
+                bestMatch = item;
+            }
+        }
+
+        // Build embed
+        const embed = new EmbedBuilder()
+            .setTitle(`📦 ${bestMatch.filename}`)
+            .setColor(0xD4A017) // Gold color
+            .setImage(bestMatch.url)
+            .setFooter({ text: `${profile.name}'s Inventory • Toothy Bot` })
+            .setTimestamp(bestMatch.timestamp);
+
+        // Add fields
+        if (bestMatch.quantity > 1) {
+            embed.addFields({ name: 'Quantity', value: `${bestMatch.quantity}`, inline: true });
+        }
+        if (bestMatch.notes) {
+            embed.addFields({ name: 'Notes', value: bestMatch.notes, inline: true });
+        }
+        if (bestMatch.sender) {
+            embed.addFields({ name: 'Dropped by', value: bestMatch.sender, inline: true });
+        }
+        if (bestMatch.category) {
+            embed.addFields({ name: 'Category', value: bestMatch.category === 'skills' ? '📜 Skill' : '🎒 Item', inline: true });
+        }
+
+        // Add link to web inventory
+        embed.addFields({
+            name: '🔗 Web Inventory',
+            value: `[View Full Inventory](${BASE_URL}/index.html?userId=${targetUser.id})`,
+            inline: false
+        });
+
+        // If multiple matches, note that
+        const replyContent = items.length > 1
+            ? `Found **${items.length}** items matching "**${searchName}**". Showing best match:`
+            : null;
+
+        await interaction.editReply({
+            content: replyContent,
+            embeds: [embed]
+        });
     }
 
     // --- USERS ---
@@ -261,9 +365,9 @@ client.on('interactionCreate', async interaction => {
     else if (interaction.commandName === 'bonus_action') {
         const actions = [
             "**Drink a Potion**: Consume a healing potion or elixir yourself.",
-            "**Shove**: Try to push a creature away or off a ledge. Make an Athletics check.\n> DC = 10 + target’s higher mod (Athletics/Acrobatics).\n> Success: Push 5 ft + 5 ft for every 2 points over DC.",
+            "**Shove**: Try to push a creature away or off a ledge. Make an Athletics check.\n> DC = 10 + target's higher mod (Athletics/Acrobatics).\n> Success: Push 5 ft + 5 ft for every 2 points over DC.",
             "**Throw**: Throw an item upwards to 15 ft + 5 for every STR modifier.",
-            "**Jump**: Move a distance based on your Strength.\n> Base range 15 ft + 5 ft for every 2 points of STR above 10.",
+            "**Jump**: Move a distance based on your Strength.\n> Base range 15 ft + 5 ft for every 2 points of STR above 10.",
             "**Dip**: Coat your weapon in a nearby surface (fire, poison, etc.) for extra damage.\n> Typically +1d6 unless otherwise stated.",
             "**Off-hand Attack**: Make a secondary attack if you are dual-wielding.\n> Only deals base die unless you have the Dual Wielder feat."
         ];
@@ -332,17 +436,6 @@ client.on('interactionCreate', async interaction => {
             replyText += `\n> **Recovery/Fix:** ${conditionData.recovery}`;
         }
         await interaction.reply(replyText);
-    }
-
-    // --- DOWNLOAD IMAGES ---
-    else if (interaction.commandName === 'download_images') {
-        await interaction.deferReply({ ephemeral: true });
-        const url = getDownloadArchiveUrl();
-        if (url) {
-            await interaction.editReply({ content: `📦 **Download Archive Generated!**\nClick here to download all images: [Download ZIP](${url})\n*Note: Link expires soon.*` });
-        } else {
-            await interaction.editReply({ content: `❌ Error generating download link. Cloudinary may not be configured.` });
-        }
     }
 
     // --- RECHECK (Force Re-scan) ---
@@ -500,8 +593,9 @@ client.on('interactionCreate', async interaction => {
             await interaction.editReply({ content: '⏰ Recheck timed out. No changes were made.', components: [] });
         }
     }
-    // NUKE COMMAND
-    if (interaction.commandName === 'nuke') {
+
+    // --- NUKE --- (Fixed: was `if` instead of `else if`)
+    else if (interaction.commandName === 'nuke') {
         const row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -556,7 +650,7 @@ client.on('interactionCreate', async interaction => {
                     let lastId = null;
                     let fetchedAll = false;
                     let batchCount = 0;
-                    const MAX_BATCHES = 10; // Scan deeply
+                    const MAX_BATCHES = 7; // Reduced from 10 to save API calls
 
                     while (!fetchedAll && batchCount < MAX_BATCHES) {
                         const options = { limit: 100 };
@@ -614,7 +708,7 @@ client.on('interactionCreate', async interaction => {
 
             let completed = 0;
             let errors = 0;
-            const CHUNK_SIZE = 10; // More aggressive concurrency
+            const CHUNK_SIZE = 10;
 
             for (let i = 0; i < tasks.length; i += CHUNK_SIZE) {
                 const chunk = tasks.slice(i, i + CHUNK_SIZE);
@@ -624,7 +718,7 @@ client.on('interactionCreate', async interaction => {
                         await db.addItem(task.userId, {
                             filename: task.attachment.filename || task.attachment.name,
                             url: hostedUrl || task.attachment.url,
-                            messageId: task.messageId,
+                            messageId: task.msgId,
                             channelId: task.channelId,
                             category: task.category,
                             sender: task.sender,
@@ -744,7 +838,7 @@ async function init() {
             console.error("❌ COMBAT LOG: Connectivity Check Failed!", netErr);
         }
 
-        // 3. Login with Retry Pattern
+        // 3. Login with Retry Pattern (capped at MAX_LOGIN_RETRIES)
         await loginWithRetry(TOKEN);
 
     } catch (error) {
@@ -754,9 +848,9 @@ async function init() {
 
 async function loginWithRetry(token) {
     let attempts = 0;
-    while (true) {
+    while (attempts < MAX_LOGIN_RETRIES) {
         try {
-            console.log(`📡 Attempting Discord Login (Attempt ${attempts + 1})...`);
+            console.log(`📡 Attempting Discord Login (Attempt ${attempts + 1}/${MAX_LOGIN_RETRIES})...`);
 
             // Race login against 20s timeout to prevent hanging
             const loginPromise = client.login(token);
@@ -766,14 +860,19 @@ async function loginWithRetry(token) {
 
             await Promise.race([loginPromise, timeoutPromise]);
             console.log("✅ Discord Login Successful!");
-            break; // Exit loop on success
+            return; // Exit on success
         } catch (error) {
             attempts++;
-            console.error(`❌ Login Failed: ${error.message}`);
+            console.error(`❌ Login Failed (${attempts}/${MAX_LOGIN_RETRIES}): ${error.message}`);
 
-            // Wait 60 seconds before retrying
-            console.log("⏳ Retrying in 60 seconds...");
-            await new Promise(resolve => setTimeout(resolve, 60000));
+            if (attempts >= MAX_LOGIN_RETRIES) {
+                console.error(`❌ CRITICAL: Max login retries (${MAX_LOGIN_RETRIES}) exceeded. Exiting process to let Railway restart with backoff.`);
+                process.exit(1);
+            }
+
+            // Wait 30 seconds before retrying (reduced from 60s to fail faster)
+            console.log("⏳ Retrying in 30 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 30000));
         }
     }
 }
