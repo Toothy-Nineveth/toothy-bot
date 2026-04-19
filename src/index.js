@@ -302,12 +302,7 @@ client.on('interactionCreate', async interaction => {
             embed.addFields({ name: 'Category', value: bestMatch.category === 'skills' ? '📜 Skill' : '🎒 Item', inline: true });
         }
 
-        // Add link to web inventory
-        embed.addFields({
-            name: '🔗 Web Inventory',
-            value: `[View Full Inventory](${BASE_URL}/index.html?userId=${targetUser.id})`,
-            inline: false
-        });
+
 
         // If multiple matches, note that
         const replyContent = items.length > 1
