@@ -4,7 +4,7 @@ dns.setDefaultResultOrder('ipv4first'); // Force IPv4 to prevent Render/Discord 
 const { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const { startServer } = require('./server');
 const db = require('./db');
-const { scheduleHoroscope, sendHoroscope } = require('./horoscope');
+const { scheduleHoroscope, sendHoroscope, setScheduledHoroscope, getScheduledHoroscope } = require('./horoscope');
 const { uploadToCloudinary } = require('./cloudinary');
 
 // Connect to DB
@@ -157,6 +157,12 @@ const commands = [
             option.setName('name').setDescription('Item name to search for').setRequired(true))
         .addUserOption(option =>
             option.setName('user').setDescription('User whose inventory to search (defaults to you)').setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('sched_horoscope')
+        .setDescription('Schedule a custom message as the next daily horoscope (Admin)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addStringOption(option =>
+            option.setName('message').setDescription('The horoscope message to schedule').setRequired(true)),
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -384,6 +390,14 @@ client.on('interactionCreate', async interaction => {
         const { sendCustomHoroscope } = require('./horoscope');
         await sendCustomHoroscope(client, message);
         await interaction.editReply({ content: '🔮 Secret horoscope sent!' });
+    }
+
+    // --- SCHEDULED HOROSCOPE (ADMIN) ---
+    else if (interaction.commandName === 'sched_horoscope') {
+        await interaction.deferReply({ ephemeral: true });
+        const message = interaction.options.getString('message');
+        setScheduledHoroscope(message);
+        await interaction.editReply({ content: `🔮 Horoscope scheduled! The next daily horoscope (5:30 AM UTC+8) will be:\n> ${message}\n\n*This overrides the random selection once, then returns to normal.*` });
     }
 
     // --- TOOTHYTORIAL (ADMIN) ---

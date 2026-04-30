@@ -9,6 +9,9 @@ const HOROSCOPE_CHANNEL_ID = '1471113961159004260';
 const TARGET_HOUR_UTC = 21;
 const TARGET_MINUTE_UTC = 30;
 
+// Scheduled override — when set, the next daily horoscope uses this message instead of random
+let scheduledOverride = null;
+
 const HOROSCOPE_MESSAGES = [
     "I'm not telling!",
     "I'll tell you later.",
@@ -86,9 +89,18 @@ async function sendHoroscope(client) {
             return;
         }
 
-        // Pick a random horoscope
-        const randomIndex = Math.floor(Math.random() * HOROSCOPE_MESSAGES.length);
-        let message = HOROSCOPE_MESSAGES[randomIndex];
+        let message;
+
+        // Check for scheduled override first
+        if (scheduledOverride) {
+            message = scheduledOverride;
+            scheduledOverride = null; // Clear after use — one-shot override
+            console.log(`[HOROSCOPE] Using scheduled override`);
+        } else {
+            // Pick a random horoscope
+            const randomIndex = Math.floor(Math.random() * HOROSCOPE_MESSAGES.length);
+            message = HOROSCOPE_MESSAGES[randomIndex];
+        }
 
         // Handle special "random player" message
         if (message === 'RANDOM_PLAYER') {
@@ -184,4 +196,20 @@ async function sendCustomHoroscope(client, message) {
     }
 }
 
-module.exports = { scheduleHoroscope, sendHoroscope, sendSecretHoroscope, sendCustomHoroscope };
+/**
+ * Set a scheduled horoscope override. The next daily trigger will use this message
+ * instead of a random one, then clear it automatically.
+ */
+function setScheduledHoroscope(message) {
+    scheduledOverride = message;
+    console.log(`[HOROSCOPE] Scheduled override set: "${message}"`);
+}
+
+/**
+ * Get the current scheduled override (or null if none)
+ */
+function getScheduledHoroscope() {
+    return scheduledOverride;
+}
+
+module.exports = { scheduleHoroscope, sendHoroscope, sendSecretHoroscope, sendCustomHoroscope, setScheduledHoroscope, getScheduledHoroscope };

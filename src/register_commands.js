@@ -97,6 +97,12 @@ const commands = [
             option.setName('name').setDescription('Item name to search for').setRequired(true))
         .addUserOption(option =>
             option.setName('user').setDescription('User whose inventory to search (defaults to you)').setRequired(false)),
+    new SlashCommandBuilder()
+        .setName('sched_horoscope')
+        .setDescription('Schedule a custom message as the next daily horoscope (Admin)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+        .addStringOption(option =>
+            option.setName('message').setDescription('The horoscope message to schedule').setRequired(true)),
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
