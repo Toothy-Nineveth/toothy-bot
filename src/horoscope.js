@@ -28,6 +28,7 @@ const HOROSCOPE_MESSAGES = [
     "Freedom.",
     "Partner.",
     "Great mage...",
+    "The job that's never started as takes longest to finish.",
     "What's behind door number three?",
     "What's the harm?",
     "A crow disagrees.",
